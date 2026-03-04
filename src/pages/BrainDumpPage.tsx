@@ -18,6 +18,7 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
   const [text, setText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const textBeforeRecordingRef = useRef("");
 
   const supportsVoice = typeof window !== "undefined" &&
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
@@ -36,42 +37,31 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
     recognition.interimResults = true;
     recognition.lang = "en-CA";
 
-    let finalTranscript = "";
+    textBeforeRecordingRef.current = text;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let finals = "";
       let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
+      for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
-          finalTranscript += transcript + " ";
+          finals += event.results[i][0].transcript;
         } else {
-          interim = transcript;
+          interim += event.results[i][0].transcript;
         }
       }
-      setText((prev) => {
-        const base = prev.endsWith("\n") || prev === "" ? prev : prev;
-        // Remove old interim, add current final + interim
-        const withoutOldInterim = base.replace(/\u200B.*$/, "");
-        return withoutOldInterim + finalTranscript + (interim ? "\u200B" + interim : "");
-      });
+      const prefix = textBeforeRecordingRef.current;
+      const separator = prefix && !prefix.endsWith(" ") && !prefix.endsWith("\n") ? " " : "";
+      setText(prefix + separator + finals + interim);
     };
 
-    recognition.onend = () => {
-      setIsListening(false);
-      // Clean up zero-width space markers from interim results
-      setText((prev) => prev.replace(/\u200B/g, ""));
-    };
+    recognition.onend = () => setIsListening(false);
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error("Speech recognition error:", event.error);
-      setIsListening(false);
-    };
+    recognition.onerror = () => setIsListening(false);
 
     recognitionRef.current = recognition;
-    finalTranscript = "";
     recognition.start();
     setIsListening(true);
-  }, [isListening]);
+  }, [isListening, text]);
 
   const canSubmit = text.trim().length >= 20 && !isLoading;
 
