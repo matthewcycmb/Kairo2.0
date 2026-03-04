@@ -28,7 +28,6 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
   const [loading, setLoading] = useState(false);
 
   const depth = getDepthScore(activity);
-  const hasSkills = activity.skills && activity.skills.length > 0;
   const isShallow = depth < 3;
   const isRich = depth >= 5;
 
