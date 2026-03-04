@@ -1,4 +1,4 @@
-import type { ParsedActivity } from "../types/activity";
+import type { ParsedActivity } from "../types/activity.ts";
 
 interface AnsweredQuestion {
   questionId: string;

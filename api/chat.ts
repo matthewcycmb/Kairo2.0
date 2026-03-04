@@ -2,9 +2,9 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import Anthropic from "@anthropic-ai/sdk";
-import { systemPrompt } from "../src/prompts/systemPrompt";
-import { buildParsePrompt } from "../src/prompts/parsePrompt";
-import { buildFollowUpPrompt } from "../src/prompts/followUpPrompt";
+import { systemPrompt } from "../src/prompts/systemPrompt.ts";
+import { buildParsePrompt } from "../src/prompts/parsePrompt.ts";
+import { buildFollowUpPrompt } from "../src/prompts/followUpPrompt.ts";
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
