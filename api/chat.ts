@@ -51,6 +51,7 @@ Respond with a JSON object in this exact format:
       "yearsActive": "e.g. Grade 9-11 or 2 years (if mentioned)",
       "role": "their role if mentioned",
       "achievements": ["Only standout accomplishments: awards, certifications, competitions, leadership titles"],
+      "skills": ["2-4 hard or soft skills inferred from this activity"],
       "hoursPerWeek": null,
       "isDetailedEnough": false
     }
@@ -74,6 +75,7 @@ Rules:
   - "hoursPerWeek": time commitment ONLY goes here (as a number)
   - "role": position/title ONLY goes here
   - "achievements": ONLY impressive accomplishments (awards, certs, competitions, ranks)
+  - "skills": 2-4 hard or soft skills inferred from the activity (e.g. "Public Speaking", "Python", "Teamwork", "Project Management")
 - Set isDetailedEnough to true if the student gave enough info (role, duration, specifics)
 - Only generate follow-up questions for activities where isDetailedEnough is false
 - 2 questions max per activity
@@ -109,6 +111,7 @@ Respond with a JSON object in this exact format:
       "yearsActive": "updated if answered",
       "role": "updated if answered",
       "achievements": ["Only standout accomplishments: awards, certifications, competitions, leadership titles. NOT hours or duration."],
+      "skills": ["2-4 hard or soft skills inferred from the activity"],
       "hoursPerWeek": 5,
       "isDetailedEnough": true
     }
@@ -125,6 +128,7 @@ Rules:
   - "hoursPerWeek": time commitment ONLY goes here (as a number)
   - "role": position/title ONLY goes here
   - "achievements": ONLY impressive accomplishments (awards, certs, competitions, ranks)
+  - "skills": 2-4 hard or soft skills inferred from the activity
 - Set followUpQuestions to an empty array — no more questions
 - Return ALL activities (even ones that weren't asked about), not just updated ones`;
 }
@@ -135,9 +139,9 @@ Description: ${activity.description}
 Details: ${activity.details.join(", ") || "none yet"}
 Role: ${activity.role || "not specified"}
 
-Generate 2-3 deeper follow-up questions to make this activity richer. Ask about specific moments, challenges, leadership, impact, or what they learned — not basic facts like hours or duration.
+Generate exactly 2 deeper follow-up questions to make this activity richer. Prioritize questions about achievements, impact, and personal growth over logistics like hours or scheduling.
 
-Respond with JSON: { "questions": ["question 1", "question 2", "question 3"] }`;
+Respond with JSON: { "questions": ["question 1", "question 2"] }`;
 }
 
 function buildExpandAnswerPrompt(
@@ -163,6 +167,7 @@ Respond with JSON containing the full updated activity:
     "yearsActive": "...",
     "role": "...",
     "achievements": ["Only standout accomplishments"],
+    "skills": ["2-4 hard or soft skills — update/refine based on the deeper answers"],
     "hoursPerWeek": null,
     "isDetailedEnough": true
   }
@@ -171,7 +176,8 @@ Respond with JSON containing the full updated activity:
 Rules:
 - Weave the answers into a richer description and details
 - Do NOT duplicate info across fields
-- Keep all existing info, just make it deeper`;
+- Keep all existing info, just make it deeper
+- Update or refine the skills list based on what the deeper answers reveal`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

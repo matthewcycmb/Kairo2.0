@@ -16,6 +16,7 @@ export interface ParsedActivity {
   yearsActive?: string;
   role?: string;
   achievements?: string[];
+  skills?: string[];
   hoursPerWeek?: number;
   isDetailedEnough: boolean;
 }

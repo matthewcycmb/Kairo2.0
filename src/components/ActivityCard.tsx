@@ -133,6 +133,19 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
         </div>
       )}
 
+      {activity.skills && activity.skills.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {activity.skills.map((skill, i) => (
+            <span
+              key={i}
+              className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Expand flow */}
       {loading && <LoadingSpinner message="Thinking..." />}
 

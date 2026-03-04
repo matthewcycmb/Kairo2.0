@@ -68,6 +68,9 @@ export function formatProfileAsText(profile: StudentProfile): string {
       if (activity.achievements && activity.achievements.length > 0) {
         lines.push(`    Achievements: ${activity.achievements.join(", ")}`);
       }
+      if (activity.skills && activity.skills.length > 0) {
+        lines.push(`    Skills: ${activity.skills.join(", ")}`);
+      }
       if (activity.details.length > 0) {
         for (const detail of activity.details) {
           lines.push(`    - ${detail}`);
