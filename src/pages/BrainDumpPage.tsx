@@ -18,50 +18,57 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
   const [text, setText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const textBeforeRecordingRef = useRef("");
+  const wantListeningRef = useRef(false);
 
   const supportsVoice = typeof window !== "undefined" &&
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
+  const startRecognition = useCallback(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = "en-CA";
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const result = event.results[0];
+      const transcript = result[0].transcript;
+      if (result.isFinal) {
+        setText((prev) => (prev ? prev + " " : "") + transcript);
+      }
+    };
+
+    recognition.onend = () => {
+      if (wantListeningRef.current) {
+        // Restart for next utterance
+        startRecognition();
+      } else {
+        setIsListening(false);
+      }
+    };
+
+    recognition.onerror = () => {
+      wantListeningRef.current = false;
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, []);
+
   const toggleListening = useCallback(() => {
     if (isListening) {
+      wantListeningRef.current = false;
       recognitionRef.current?.stop();
       setIsListening(false);
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-CA";
-
-    textBeforeRecordingRef.current = text;
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finals = "";
-      let interim = "";
-      for (let i = 0; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finals += event.results[i][0].transcript;
-        } else {
-          interim += event.results[i][0].transcript;
-        }
-      }
-      const prefix = textBeforeRecordingRef.current;
-      const separator = prefix && !prefix.endsWith(" ") && !prefix.endsWith("\n") ? " " : "";
-      setText(prefix + separator + finals + interim);
-    };
-
-    recognition.onend = () => setIsListening(false);
-
-    recognition.onerror = () => setIsListening(false);
-
-    recognitionRef.current = recognition;
-    recognition.start();
+    wantListeningRef.current = true;
     setIsListening(true);
-  }, [isListening, text]);
+    startRecognition();
+  }, [isListening, startRecognition]);
 
   const canSubmit = text.trim().length >= 20 && !isLoading;
 
