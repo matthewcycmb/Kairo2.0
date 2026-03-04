@@ -17,6 +17,7 @@ function getDepthScore(a: ParsedActivity): number {
   if (a.yearsActive) score++;
   if (a.hoursPerWeek) score++;
   if (a.achievements && a.achievements.length > 0) score += a.achievements.length;
+  if (a.skills && a.skills.length > 0) score += 1;
   return score;
 }
 
@@ -27,6 +28,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
   const [loading, setLoading] = useState(false);
 
   const depth = getDepthScore(activity);
+  const hasSkills = activity.skills && activity.skills.length > 0;
   const isShallow = depth < 3;
   const isRich = depth >= 5;
 
@@ -146,6 +148,12 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
         </div>
       )}
 
+      {isShallow && !expanding && !loading && (
+        <p className="mt-3 text-xs text-gray-400 italic">
+          This could be stronger — add more detail
+        </p>
+      )}
+
       {/* Expand flow */}
       {loading && <LoadingSpinner message="Thinking..." />}
 
@@ -184,13 +192,15 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       {!expanding && !loading && (
         <button
           onClick={handleExpand}
-          className={`mt-3 text-sm font-medium ${
+          className={
             isShallow
-              ? "text-blue-500 hover:text-blue-600"
-              : "text-gray-400 hover:text-gray-500"
-          }`}
+              ? "mt-3 w-full rounded-lg bg-blue-500 py-2 text-sm font-medium text-white hover:bg-blue-600"
+              : isRich
+                ? "mt-3 rounded-lg border border-gray-200 px-4 py-1.5 text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500"
+                : "mt-3 rounded-lg border border-blue-200 px-4 py-1.5 text-sm font-medium text-blue-500 hover:bg-blue-50"
+          }
         >
-          {isShallow ? "Tell me more about this →" : "Expand this →"}
+          {isShallow ? "Add more detail +" : isRich ? "Expand this" : "Add more detail"}
         </button>
       )}
     </div>
