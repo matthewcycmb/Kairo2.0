@@ -7,8 +7,10 @@ import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import { createProfile, updateProfile, loadProfile } from "./lib/profileApi";
 
+const initialProfileId = new URLSearchParams(window.location.search).get("p");
+
 function App() {
-  const [currentView, setCurrentView] = useState<AppView>("input");
+  const [currentView, setCurrentView] = useState<AppView>(initialProfileId ? "loading" : "input");
   const [rawText, setRawText] = useState("");
   const [profile, setProfile] = useState<StudentProfile>({
     activities: [],
@@ -18,7 +20,7 @@ function App() {
   const [currentRound, setCurrentRound] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [profileId, setProfileId] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(initialProfileId);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -36,23 +38,22 @@ function App() {
 
   // Load profile from URL on mount
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("p");
-    if (!id) return;
+    if (!initialProfileId) return;
 
-    setIsLoading(true);
-    loadProfile(id)
+    loadProfile(initialProfileId)
       .then((loaded) => {
         if (loaded) {
           setProfile(loaded);
-          setProfileId(id);
           setCurrentView("profile");
+        } else {
+          setProfileId(null);
+          setCurrentView("input");
         }
       })
       .catch(() => {
-        // Bad ID — fall through to input view
-      })
-      .finally(() => setIsLoading(false));
+        setProfileId(null);
+        setCurrentView("input");
+      });
   }, []);
 
   const handleBrainDumpSubmit = (text: string) => {

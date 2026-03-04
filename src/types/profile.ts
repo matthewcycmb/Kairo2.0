@@ -25,7 +25,7 @@ export interface FollowUpRound {
   completed: boolean;
 }
 
-export type AppView = "input" | "chat" | "profile";
+export type AppView = "input" | "chat" | "profile" | "loading";
 
 export interface ParseRequest {
   type: "parse";
