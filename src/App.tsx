@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { AppView } from "./types/profile";
 import type { ParsedActivity } from "./types/activity";
 import type { FollowUpRound, StudentProfile } from "./types/profile";
 import BrainDumpPage from "./pages/BrainDumpPage";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
+import { createProfile, updateProfile, loadProfile } from "./lib/profileApi";
 
 function App() {
   const [currentView, setCurrentView] = useState<AppView>("input");
@@ -17,6 +18,42 @@ function App() {
   const [currentRound, setCurrentRound] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
+
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const debouncedSave = useCallback(
+    (id: string, data: StudentProfile) => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      debounceTimer.current = setTimeout(() => {
+        updateProfile(id, data).catch((err) =>
+          console.error("Auto-save failed:", err)
+        );
+      }, 500);
+    },
+    []
+  );
+
+  // Load profile from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("p");
+    if (!id) return;
+
+    setIsLoading(true);
+    loadProfile(id)
+      .then((loaded) => {
+        if (loaded) {
+          setProfile(loaded);
+          setProfileId(id);
+          setCurrentView("profile");
+        }
+      })
+      .catch(() => {
+        // Bad ID — fall through to input view
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const handleBrainDumpSubmit = (text: string) => {
     setRawText(text);
@@ -43,28 +80,43 @@ function App() {
     }
   };
 
-  const handleGenerateProfile = () => {
+  const handleGenerateProfile = async () => {
     setCurrentView("profile");
+    try {
+      const id = await createProfile(profile);
+      setProfileId(id);
+      history.replaceState(null, "", "?p=" + id);
+    } catch (err) {
+      console.error("Failed to save profile:", err);
+    }
   };
 
   const handleEditActivity = (
     id: string,
     updates: Partial<ParsedActivity>
   ) => {
-    setProfile((prev) => ({
-      ...prev,
-      activities: prev.activities.map((a) =>
-        a.id === id ? { ...a, ...updates } : a
-      ),
-      lastUpdated: new Date(),
-    }));
+    setProfile((prev) => {
+      const next = {
+        ...prev,
+        activities: prev.activities.map((a) =>
+          a.id === id ? { ...a, ...updates } : a
+        ),
+        lastUpdated: new Date(),
+      };
+      if (profileId) debouncedSave(profileId, next);
+      return next;
+    });
   };
 
   const handleAddActivities = (newActivities: ParsedActivity[]) => {
-    setProfile((prev) => ({
-      activities: [...prev.activities, ...newActivities],
-      lastUpdated: new Date(),
-    }));
+    setProfile((prev) => {
+      const next = {
+        activities: [...prev.activities, ...newActivities],
+        lastUpdated: new Date(),
+      };
+      if (profileId) debouncedSave(profileId, next);
+      return next;
+    });
   };
 
   const handleStartOver = () => {
@@ -74,6 +126,8 @@ function App() {
     setFollowUpRounds([]);
     setCurrentRound(0);
     setError(null);
+    setProfileId(null);
+    history.replaceState(null, "", "/");
   };
 
   return (
