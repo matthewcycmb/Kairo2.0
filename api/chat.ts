@@ -1,11 +1,15 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
+
 import Anthropic from "@anthropic-ai/sdk";
 import { systemPrompt } from "../src/prompts/systemPrompt";
 import { buildParsePrompt } from "../src/prompts/parsePrompt";
 import { buildFollowUpPrompt } from "../src/prompts/followUpPrompt";
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+// Extends timeout to 30s on Vercel Pro plan (Hobby is capped at 10s)
+export const maxDuration = 30;
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -42,16 +46,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const rawText = textBlock.text;
 
-    // Parse to validate it's valid JSON, then return raw
     try {
       const cleaned = rawText.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-      JSON.parse(cleaned);
-      return res.status(200).json(JSON.parse(cleaned));
+      const parsed = JSON.parse(cleaned);
+      return res.status(200).json(parsed);
     } catch {
       return res.status(500).send("AI returned invalid JSON");
     }
   } catch (error) {
     console.error("API error:", error);
+
+    if (error instanceof Anthropic.RateLimitError) {
+      return res.status(429).send("Too many requests — please try again in a moment");
+    }
+
     return res.status(500).send("Internal server error");
   }
 }
