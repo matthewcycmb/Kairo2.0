@@ -79,7 +79,7 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
           Kairo
         </h1>
         <p className="text-lg text-gray-500">
-          Dump your activities. We'll make them look good.
+          Dump your activities. See what you've actually done.
         </p>
       </div>
 

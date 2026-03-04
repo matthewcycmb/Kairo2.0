@@ -247,7 +247,7 @@ export default function ProfilePage({
         {forgotStep === "idle" && (
           <button
             onClick={() => setForgotStep("input")}
-            className="text-xs text-gray-400 hover:text-gray-500"
+            className="w-full rounded-lg border border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 transition-colors hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/50"
           >
             + I forgot something
           </button>
