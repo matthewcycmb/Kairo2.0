@@ -195,7 +195,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
             isShallow
               ? "mt-3 w-full rounded-lg bg-blue-500 py-2 text-sm font-medium text-white hover:bg-blue-600"
               : isRich
-                ? "mt-3 rounded-lg border border-gray-200 px-4 py-1.5 text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500"
+                ? "mt-3 rounded-lg border border-blue-200 px-4 py-1.5 text-sm text-blue-500 hover:border-blue-300 hover:text-blue-600"
                 : "mt-3 rounded-lg border border-blue-200 px-4 py-1.5 text-sm font-medium text-blue-500 hover:bg-blue-50"
           }
         >
