@@ -67,7 +67,7 @@ export default function ProfilePage({
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Your Profile</h1>
           <p className="text-sm text-gray-400">
-            Click any text to edit it
+            Click text to edit, or expand activities for more depth
           </p>
         </div>
         <div className="flex gap-2">
@@ -113,40 +113,36 @@ export default function ProfilePage({
         </div>
       )}
 
-      <div className="mt-8 border-t border-gray-100 pt-6">
+      {isLoading && <LoadingSpinner message="Adding activities..." />}
+
+      <div className="mt-12 border-t border-gray-100 pt-4">
         {!showForgot ? (
           <button
             onClick={() => setShowForgot(true)}
-            className="text-sm font-medium text-blue-500 hover:text-blue-600"
+            className="text-xs text-gray-400 hover:text-gray-500"
           >
             + I forgot something
           </button>
         ) : (
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-700">
-              What else did you forget?
-            </p>
+          <div className="space-y-2">
             <textarea
               value={forgotText}
               onChange={(e) => setForgotText(e.target.value)}
               placeholder="I also do..."
-              rows={3}
-              className="w-full resize-none rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              rows={2}
+              className="w-full resize-none rounded-lg border border-gray-200 bg-white p-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none"
             />
             <div className="flex gap-2">
               <button
                 onClick={handleForgotSubmit}
                 disabled={forgotText.trim().length < 10 || isLoading}
-                className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-300 disabled:opacity-40"
               >
-                Add to Profile
+                Add
               </button>
               <button
-                onClick={() => {
-                  setShowForgot(false);
-                  setForgotText("");
-                }}
-                className="rounded-lg px-4 py-2 text-sm text-gray-500 hover:bg-gray-100"
+                onClick={() => { setShowForgot(false); setForgotText(""); }}
+                className="rounded-lg px-3 py-1.5 text-xs text-gray-400 hover:bg-gray-100"
               >
                 Cancel
               </button>
@@ -154,8 +150,6 @@ export default function ProfilePage({
           </div>
         )}
       </div>
-
-      {isLoading && <LoadingSpinner message="Adding activities..." />}
     </div>
   );
 }

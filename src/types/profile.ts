@@ -38,6 +38,17 @@ export interface FollowUpRequest {
   answers: { questionId: string; activityId: string; question: string; answer: string }[];
 }
 
+export interface ExpandRequest {
+  type: "expand";
+  activity: ParsedActivity;
+}
+
+export interface ExpandAnswerRequest {
+  type: "expand-answer";
+  activity: ParsedActivity;
+  answers: { question: string; answer: string }[];
+}
+
 export interface ParseResponse {
   activities: ParsedActivity[];
   followUpQuestions: FollowUpQuestion[];
@@ -46,4 +57,12 @@ export interface ParseResponse {
 export interface FollowUpResponse {
   updatedActivities: ParsedActivity[];
   followUpQuestions: FollowUpQuestion[];
+}
+
+export interface ExpandResponse {
+  questions: string[];
+}
+
+export interface ExpandAnswerResponse {
+  updatedActivity: ParsedActivity;
 }

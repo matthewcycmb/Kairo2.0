@@ -129,6 +129,51 @@ Rules:
 - Return ALL activities (even ones that weren't asked about), not just updated ones`;
 }
 
+function buildExpandPrompt(activity: { name: string; description: string; details: string[]; role?: string }): string {
+  return `A student has an activity called "${activity.name}" in their profile with this info:
+Description: ${activity.description}
+Details: ${activity.details.join(", ") || "none yet"}
+Role: ${activity.role || "not specified"}
+
+Generate 2-3 deeper follow-up questions to make this activity richer. Ask about specific moments, challenges, leadership, impact, or what they learned — not basic facts like hours or duration.
+
+Respond with JSON: { "questions": ["question 1", "question 2", "question 3"] }`;
+}
+
+function buildExpandAnswerPrompt(
+  activity: unknown,
+  answers: { question: string; answer: string }[]
+): string {
+  return `A student answered deeper questions about one of their activities. Update the activity with richer detail.
+
+Current activity:
+${JSON.stringify(activity, null, 2)}
+
+Their answers:
+${JSON.stringify(answers, null, 2)}
+
+Respond with JSON containing the full updated activity:
+{
+  "updatedActivity": {
+    "id": "...",
+    "name": "...",
+    "category": "...",
+    "description": "A richer 1-2 sentence summary weaving in the new depth. Do NOT include hours, duration, or achievements here.",
+    "details": ["Expanded details including new specifics from answers. Each detail should be unique."],
+    "yearsActive": "...",
+    "role": "...",
+    "achievements": ["Only standout accomplishments"],
+    "hoursPerWeek": null,
+    "isDetailedEnough": true
+  }
+}
+
+Rules:
+- Weave the answers into a richer description and details
+- Do NOT duplicate info across fields
+- Keep all existing info, just make it deeper`;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).send("Method not allowed");
@@ -142,6 +187,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       userPrompt = buildParsePrompt(body.text);
     } else if (body.type === "followup") {
       userPrompt = buildFollowUpPrompt(body.activities, body.answers);
+    } else if (body.type === "expand") {
+      userPrompt = buildExpandPrompt(body.activity);
+    } else if (body.type === "expand-answer") {
+      userPrompt = buildExpandAnswerPrompt(body.activity, body.answers);
     } else {
       return res.status(400).send("Invalid request type");
     }
