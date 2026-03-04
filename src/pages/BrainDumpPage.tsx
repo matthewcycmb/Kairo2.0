@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 
 interface BrainDumpPageProps {
   onSubmit: (text: string) => void;
@@ -16,6 +16,62 @@ const PLACEHOLDER = `Just dump everything here! For example:
 
 export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProps) {
   const [text, setText] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  const supportsVoice = typeof window !== "undefined" &&
+    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+
+  const toggleListening = useCallback(() => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-CA";
+
+    let finalTranscript = "";
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + " ";
+        } else {
+          interim = transcript;
+        }
+      }
+      setText((prev) => {
+        const base = prev.endsWith("\n") || prev === "" ? prev : prev;
+        // Remove old interim, add current final + interim
+        const withoutOldInterim = base.replace(/\u200B.*$/, "");
+        return withoutOldInterim + finalTranscript + (interim ? "\u200B" + interim : "");
+      });
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      // Clean up zero-width space markers from interim results
+      setText((prev) => prev.replace(/\u200B/g, ""));
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    finalTranscript = "";
+    recognition.start();
+    setIsListening(true);
+  }, [isListening]);
 
   const canSubmit = text.trim().length >= 20 && !isLoading;
 
@@ -31,13 +87,38 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
       </div>
 
       <div className="w-full">
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={PLACEHOLDER}
-          rows={10}
-          className="w-full resize-none rounded-xl border border-gray-200 bg-white p-4 text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-        />
+        <div className="relative">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={PLACEHOLDER}
+            rows={10}
+            className="w-full resize-none rounded-xl border border-gray-200 bg-white p-4 pr-14 text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          />
+          {supportsVoice && (
+            <button
+              onClick={toggleListening}
+              type="button"
+              className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full transition-all ${
+                isListening
+                  ? "animate-pulse bg-red-500 text-white shadow-lg"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+              }`}
+              title={isListening ? "Stop recording" : "Voice input"}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                <path d="M17 11a1 1 0 0 1 2 0 7 7 0 0 1-6 6.92V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.08A7 7 0 0 1 5 11a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {isListening && (
+          <p className="mt-2 text-center text-sm text-red-500">
+            Listening... tap the mic to stop
+          </p>
+        )}
 
         <div className="mt-4 flex items-center justify-between">
           <span className="text-sm text-gray-400">
