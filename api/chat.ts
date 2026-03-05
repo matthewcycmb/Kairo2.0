@@ -185,7 +185,7 @@ function buildAdvisorSystemPrompt(profile: AdvisorProfile): string {
     ? `Grade: ${profile.goals.grade}\nTarget Universities: ${profile.goals.targetUniversities || "Not specified"}\nLocation: ${profile.goals.location || "Not specified"}`
     : "No specific goals set yet.";
 
-  return `You are the Kairo Advisor — a knowledgeable, encouraging guidance counsellor for Canadian high school students. You have the student's full extracurricular profile and goals.
+  return `You are the Kairo Advisor — a smart older friend who's been through the university application grind and knows what actually matters. You talk like a real person, not a guidance counsellor reading from a pamphlet. You're encouraging but honest, casual but knowledgeable. Think: the cool older sibling's friend who got into a great program and is giving you the real talk.
 
 STUDENT PROFILE:
 ${activitiesSummary}
@@ -193,12 +193,23 @@ ${activitiesSummary}
 GOALS:
 ${goalsSection}
 
+RECOMMENDATION RULES (CRITICAL):
+- Never recommend a specific named program, competition, or organization unless you are highly confident it exists in the student's stated location. When unsure, give advice that is actionable without requiring the student to know about specific programs.
+- Good example: "ask your school's business teacher this week if there are any inter-school business competitions coming up" — bad example: "research business competitions in your area."
+- Good example: "email your school counselor and ask what entrepreneurship clubs or competitions other students have done" — bad example: "join DECA or Junior Achievement."
+- Every action step should be something the student can do THIS WEEK by talking to a specific person or going to a specific place they already have access to — their teacher, their counselor, their school notice board, a classmate.
+- Never tell the student to "research" or "look into" something — that is not an action step. An action step names WHO to talk to or WHERE to go.
+
+TONE:
+- Talk like a friend, not a report. Use "you" and "your" a lot. Short sentences. It's okay to be a little blunt.
+- Say "honestly" and "real talk" sometimes. Don't say "I recommend" or "you should consider" — say "you should totally" or "look into" or "this would be sick for you"
+- Don't hedge everything. If something is a good idea, just say it's a good idea.
+- No corporate-speak. "Leverage your leadership experience" = bad. "You're already leading the robotics team, so use that" = good.
+
 Rules:
 - Always reference the student's actual activities by name — never give generic advice
 - Maximum 3 action items per response
-- Be specific: name real programs, competitions, scholarships, and opportunities
-- Suggest things relevant to Canadian students (Canadian universities, provincial programs, etc.)
-- Keep responses concise and conversational — no bullet-point walls
+- Keep responses concise and conversational — no bullet-point walls, no numbered lists unless asked
 - For follow-up messages, respond in plain conversational text
 - For the first analysis, respond in JSON as instructed
 - If the student asks something outside your scope, gently redirect to extracurricular/university planning`;
@@ -220,13 +231,20 @@ function buildAdvisorUserPrompt(
     "A specific gap or area to strengthen relative to their targets — 1 sentence each",
     "Another gap — max 3 items"
   ],
-  "actionStep": "One concrete, specific action they can take this week. Name a real program, event, or opportunity."
+  "actionStep": "One concrete, specific action they can take this week. Must name WHO to talk to or WHERE to go — e.g. 'ask your math teacher about...' or 'go to your school counselor and ask...' Never say 'research' or 'look into'.",
+  "actionGap": "Which gap this action addresses — match one of the gaps above",
+  "suggestions": [
+    "A contextual follow-up question the student might want to ask — 2-3 items",
+    "Another question based on the analysis"
+  ]
 }
 
 Rules:
 - Each strength must reference a specific activity from their profile by name
 - Each gap should be specific to their target universities/programs if set
-- The action step must be immediately actionable (this week) and specific — name real opportunities
+- The action step must be immediately actionable (this week) — name a specific person to talk to or place to go, never tell them to "research" or "look into" something
+- actionGap should be a short label for which gap the action step addresses
+- suggestions should be 2-3 natural follow-up questions the student might ask next, based on the analysis (e.g. "What competitions should I enter for robotics?" or "How do I strengthen my volunteering?")
 - Keep each item to 1 concise sentence
 - Return ONLY valid JSON, no extra text`;
   }
@@ -236,7 +254,20 @@ Rules:
     .map((m) => `${m.role === "user" ? "Student" : "Advisor"}: ${m.content}`)
     .join("\n\n");
 
-  return `Conversation so far:\n\n${history}\n\nRespond to the student's latest message. Be specific and reference their profile.`;
+  return `Conversation so far:\n\n${history}\n\nRespond to the student's latest message. Be specific and reference their profile.
+
+Respond with a JSON object in this exact format:
+{
+  "message": "Your conversational response to the student. Be specific, reference their activities by name.",
+  "suggestions": ["A follow-up question the student might ask next", "Another contextual suggestion"],
+  "actionItems": [{"action": "A specific action step if your response includes one", "gap": "Which gap or area this addresses"}]
+}
+
+Rules:
+- "message" is your conversational response — keep it concise and natural
+- "suggestions" should be 2-3 contextual follow-up questions the student might want to ask, based on what you just discussed
+- "actionItems" should only be included if your response gives a specific, actionable recommendation. Omit or use an empty array if you're just answering a question without recommending an action. Each item needs an "action" (what to do) and "gap" (which area it strengthens).
+- Return ONLY valid JSON, no extra text`;
 }
 
 function buildExpandAnswerPrompt(
@@ -299,9 +330,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).send("No text response from AI");
       }
 
+      const cleaned = advisorTextBlock.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+
       if (body.isFirstMessage) {
         try {
-          const cleaned = advisorTextBlock.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
           const parsed = JSON.parse(cleaned);
           const analysis = {
             strengths: parsed.strengths || [],
@@ -314,14 +346,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ...analysis.gaps.map((g: string) => `Gap: ${g}`),
             `Action: ${analysis.actionStep}`,
           ].join("\n");
-          return res.status(200).json({ message, analysis });
+          const suggestions = parsed.suggestions || [];
+          const actionItems = parsed.actionStep
+            ? [{ action: parsed.actionStep, gap: parsed.actionGap || parsed.gaps?.[0] || "" }]
+            : [];
+          return res.status(200).json({ message, analysis, suggestions, actionItems });
         } catch {
-          // Fallback: return as plain text if JSON parsing fails
           return res.status(200).json({ message: advisorTextBlock.text });
         }
       }
 
-      return res.status(200).json({ message: advisorTextBlock.text });
+      // Follow-up messages: try JSON, fall back to plain text
+      try {
+        const parsed = JSON.parse(cleaned);
+        return res.status(200).json({
+          message: parsed.message || advisorTextBlock.text,
+          suggestions: parsed.suggestions || [],
+          actionItems: parsed.actionItems || [],
+        });
+      } catch {
+        return res.status(200).json({ message: advisorTextBlock.text });
+      }
     }
 
     let userPrompt: string;

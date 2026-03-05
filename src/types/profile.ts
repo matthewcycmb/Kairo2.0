@@ -26,12 +26,20 @@ export interface AdvisorAnalysis {
   actionStep: string;
 }
 
+export interface ActionItem {
+  id: string;
+  action: string;
+  gap: string;
+  completed: boolean;
+}
+
 export interface AdvisorMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: string;
   analysis?: AdvisorAnalysis;
+  suggestions?: string[];
 }
 
 export interface StudentProfile {
@@ -39,6 +47,7 @@ export interface StudentProfile {
   lastUpdated: Date;
   goals?: StudentGoals;
   advisorMessages?: AdvisorMessage[];
+  actionItems?: ActionItem[];
 }
 
 export interface FollowUpRound {
@@ -99,4 +108,6 @@ export interface AdvisorRequest {
 export interface AdvisorResponse {
   message: string;
   analysis?: AdvisorAnalysis;
+  suggestions?: string[];
+  actionItems?: { action: string; gap: string }[];
 }

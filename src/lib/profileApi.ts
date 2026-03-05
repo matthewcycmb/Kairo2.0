@@ -34,3 +34,26 @@ export async function loadProfile(id: string): Promise<StudentProfile | null> {
   const data = await res.json();
   return data.profile;
 }
+
+export async function saveIdentifier(profileId: string, identifier: string): Promise<void> {
+  const res = await fetch("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "save-identifier", profileId, identifier }),
+  });
+
+  if (!res.ok) throw new Error("Failed to save identifier");
+}
+
+export async function lookupIdentifier(identifier: string): Promise<string | null> {
+  const res = await fetch("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "lookup-identifier", identifier }),
+  });
+
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Failed to look up identifier");
+  const data = await res.json();
+  return data.profileId;
+}

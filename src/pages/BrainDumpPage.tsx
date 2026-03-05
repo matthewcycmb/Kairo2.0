@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { lookupIdentifier } from "../lib/profileApi";
 
 interface BrainDumpPageProps {
   onSubmit: (text: string) => void;
@@ -19,6 +20,10 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const wantListeningRef = useRef(false);
+  const [showLookup, setShowLookup] = useState(false);
+  const [lookupInput, setLookupInput] = useState("");
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
   const supportsVoice = typeof window !== "undefined" &&
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
@@ -69,6 +74,24 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
     setIsListening(true);
     startRecognition();
   }, [isListening, startRecognition]);
+
+  const handleLookup = async () => {
+    if (!lookupInput.trim()) return;
+    setLookupLoading(true);
+    setLookupError(null);
+    try {
+      const profileId = await lookupIdentifier(lookupInput.trim());
+      if (profileId) {
+        window.location.href = window.location.origin + "?p=" + profileId;
+      } else {
+        setLookupError("No profile found for that identifier");
+      }
+    } catch {
+      setLookupError("Something went wrong. Try again.");
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   const canSubmit = text.trim().length >= 20 && !isLoading;
 
@@ -134,6 +157,40 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
             Let's go →
           </button>
         </div>
+      </div>
+
+      <div className="mt-4 text-center">
+        {!showLookup ? (
+          <button
+            onClick={() => setShowLookup(true)}
+            className="text-sm text-white/40 transition-colors hover:text-white/60"
+          >
+            Already have a profile? Find it here.
+          </button>
+        ) : (
+          <div className="mx-auto max-w-sm space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={lookupInput}
+                onChange={(e) => { setLookupInput(e.target.value); setLookupError(null); }}
+                placeholder="Your Instagram or email"
+                className="flex-1 rounded-lg border border-white/[0.12] bg-white/[0.06] px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
+                onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+              />
+              <button
+                onClick={handleLookup}
+                disabled={!lookupInput.trim() || lookupLoading}
+                className="shrink-0 rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/[0.22] disabled:opacity-40"
+              >
+                {lookupLoading ? "Finding..." : "Find"}
+              </button>
+            </div>
+            {lookupError && (
+              <p className="text-sm text-red-400">{lookupError}</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

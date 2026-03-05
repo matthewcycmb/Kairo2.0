@@ -60,6 +60,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ profile: data.data });
     }
 
+    if (type === "save-identifier") {
+      const { profileId, identifier } = req.body;
+      if (!profileId || !identifier) {
+        return res.status(400).json({ error: "profileId and identifier are required" });
+      }
+
+      const normalized = identifier.toLowerCase().replace(/^@/, "");
+
+      const { error } = await supabase
+        .from("profile_identifiers")
+        .upsert(
+          { profile_id: profileId, identifier: normalized },
+          { onConflict: "identifier" }
+        );
+
+      if (error) {
+        console.error("Supabase identifier upsert error:", error);
+        return res.status(500).json({ error: "Failed to save identifier" });
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
+    if (type === "lookup-identifier") {
+      const { identifier } = req.body;
+      if (!identifier) {
+        return res.status(400).json({ error: "identifier is required" });
+      }
+
+      const normalized = identifier.toLowerCase().replace(/^@/, "");
+
+      const { data, error } = await supabase
+        .from("profile_identifiers")
+        .select("profile_id")
+        .eq("identifier", normalized)
+        .single();
+
+      if (error || !data) {
+        return res.status(404).json({ error: "No profile found for that identifier" });
+      }
+
+      return res.status(200).json({ profileId: data.profile_id });
+    }
+
     return res.status(400).json({ error: "Invalid request type" });
   } catch (error) {
     console.error("Profile API error:", error);

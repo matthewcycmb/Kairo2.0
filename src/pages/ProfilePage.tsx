@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import type { ParsedActivity } from "../types/activity";
-import type { StudentProfile, FollowUpQuestion, AdvisorMessage } from "../types/profile";
+import type { StudentProfile, FollowUpQuestion, AdvisorMessage, ActionItem } from "../types/profile";
 import { groupByCategory, copyProfileToClipboard } from "../lib/profileUtils";
 import { callApi } from "../lib/apiClient";
+import { saveIdentifier } from "../lib/profileApi";
 import CategorySection from "../components/CategorySection";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AdvisorChat from "../components/AdvisorChat";
@@ -20,6 +21,10 @@ interface ProfilePageProps {
   onAdvisorMessage: (text: string) => void;
   advisorLoading: boolean;
   onAdvisorTabOpened: () => void;
+  actionItems: ActionItem[];
+  onToggleActionItem: (id: string) => void;
+  profileId: string | null;
+  isNewProfile: boolean;
 }
 
 export default function ProfilePage({
@@ -35,6 +40,10 @@ export default function ProfilePage({
   onAdvisorMessage,
   advisorLoading,
   onAdvisorTabOpened,
+  actionItems,
+  onToggleActionItem,
+  profileId,
+  isNewProfile,
 }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState<"profile" | "advisor">("profile");
   const [forgotStep, setForgotStep] = useState<"idle" | "input" | "followup">("idle");
@@ -44,6 +53,11 @@ export default function ProfilePage({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentActivityIdx, setCurrentActivityIdx] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [showSaveCard, setShowSaveCard] = useState(true);
+  const [identifierInput, setIdentifierInput] = useState("");
+  const [identifierSaved, setIdentifierSaved] = useState(false);
+  const [identifierSaving, setIdentifierSaving] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const grouped = groupByCategory(profile.activities);
 
@@ -82,6 +96,31 @@ export default function ProfilePage({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setError("Failed to copy to clipboard");
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!profileId) return;
+    try {
+      await navigator.clipboard.writeText(window.location.origin + "?p=" + profileId);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      setError("Failed to copy link");
+    }
+  };
+
+  const handleSaveIdentifier = async () => {
+    if (!profileId || !identifierInput.trim()) return;
+    setIdentifierSaving(true);
+    try {
+      await saveIdentifier(profileId, identifierInput.trim());
+      setIdentifierSaved(true);
+      setTimeout(() => setIdentifierSaved(false), 3000);
+    } catch {
+      setError("Failed to save identifier");
+    } finally {
+      setIdentifierSaving(false);
     }
   };
 
@@ -231,7 +270,7 @@ export default function ProfilePage({
       </div>
 
       {/* Tab bar */}
-      <div className="mb-6 flex gap-1 rounded-xl border border-white/[0.12] bg-white/[0.06] p-1 backdrop-blur-[40px]">
+      <div className="mb-6 flex gap-1 rounded-xl border border-white/[0.15] bg-white/[0.08] p-1 backdrop-blur-[40px]">
         <button
           onClick={() => handleTabClick("profile")}
           className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
@@ -290,6 +329,43 @@ export default function ProfilePage({
             />
           )}
 
+          {profileId && showSaveCard && (
+            <div className="relative mt-8 rounded-xl border border-white/[0.10] bg-white/[0.04] p-4">
+              <button
+                onClick={() => setShowSaveCard(false)}
+                className="absolute right-3 top-3 text-white/30 hover:text-white/60"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </button>
+              <h3 className="mb-3 text-sm font-semibold text-white">Save your profile</h3>
+              <button
+                onClick={handleCopyLink}
+                className="mb-3 w-full rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
+              >
+                {linkCopied ? "Copied!" : "Copy my profile link"}
+              </button>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={identifierInput}
+                  onChange={(e) => setIdentifierInput(e.target.value)}
+                  placeholder="Your Instagram or email"
+                  className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none"
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveIdentifier()}
+                />
+                <button
+                  onClick={handleSaveIdentifier}
+                  disabled={!identifierInput.trim() || identifierSaving}
+                  className="shrink-0 rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.12] hover:text-white disabled:opacity-40"
+                >
+                  {identifierSaved ? "Saved!" : identifierSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="mt-12 border-t border-white/10 pt-4">
             {forgotStep === "idle" && (
               <button
@@ -328,7 +404,7 @@ export default function ProfilePage({
             )}
 
             {forgotStep === "followup" && !isLoading && currentForgotActivity && (
-              <div className="space-y-3 rounded-xl border border-white/[0.12] bg-white/[0.06] p-4 backdrop-blur-[40px]">
+              <div className="space-y-3 rounded-xl border border-white/[0.15] bg-white/[0.08] p-4 backdrop-blur-[40px]">
                 <div className="flex items-center justify-between gap-2">
                   <p className="min-w-0 truncate text-sm font-semibold text-blue-400">
                     {currentForgotActivity.activityName}
@@ -394,6 +470,8 @@ export default function ProfilePage({
             advisorMessages={advisorMessages}
             onNewMessage={onAdvisorMessage}
             isLoading={advisorLoading}
+            actionItems={actionItems}
+            onToggleActionItem={onToggleActionItem}
           />
         </div>
       )}

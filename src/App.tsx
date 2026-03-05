@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { AppView, AdvisorMessage, StudentGoals } from "./types/profile";
+import type { AppView, AdvisorMessage, ActionItem, StudentGoals } from "./types/profile";
 import type { ParsedActivity } from "./types/activity";
 import type { FollowUpRound, StudentProfile } from "./types/profile";
 import BrainDumpPage from "./pages/BrainDumpPage";
@@ -11,22 +11,37 @@ import { callApi } from "./lib/apiClient";
 
 const initialProfileId = new URLSearchParams(window.location.search).get("p");
 
+function getCachedProfile(id: string | null): StudentProfile | null {
+  if (!id) return null;
+  try {
+    const raw = localStorage.getItem(`kairo_profile_${id}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+const cachedProfile = getCachedProfile(initialProfileId);
+
 function App() {
-  const [currentView, setCurrentView] = useState<AppView>(initialProfileId ? "loading" : "input");
+  const [currentView, setCurrentView] = useState<AppView>(
+    cachedProfile ? "profile" : initialProfileId ? "loading" : "input"
+  );
   const [rawText, setRawText] = useState("");
-  const [profile, setProfile] = useState<StudentProfile>({
-    activities: [],
-    lastUpdated: new Date(),
-  });
+  const [profile, setProfile] = useState<StudentProfile>(
+    cachedProfile || { activities: [], lastUpdated: new Date() }
+  );
   const [followUpRounds, setFollowUpRounds] = useState<FollowUpRound[]>([]);
   const [currentRound, setCurrentRound] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(initialProfileId);
+  const [isNewProfile, setIsNewProfile] = useState(false);
 
   // Advisor state
-  const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>([]);
+  const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>(cachedProfile?.advisorMessages || []);
   const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [actionItems, setActionItems] = useState<ActionItem[]>(cachedProfile?.actionItems || []);
   const advisorInitRef = useRef(false);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,6 +50,7 @@ function App() {
     (id: string, data: StudentProfile) => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
       debounceTimer.current = setTimeout(() => {
+        try { localStorage.setItem(`kairo_profile_${id}`, JSON.stringify(data)); } catch {}
         updateProfile(id, data).catch((err) =>
           console.error("Auto-save failed:", err)
         );
@@ -53,6 +69,9 @@ function App() {
           setProfile(loaded);
           if (loaded.advisorMessages?.length) {
             setAdvisorMessages(loaded.advisorMessages);
+          }
+          if (loaded.actionItems?.length) {
+            setActionItems(loaded.actionItems);
           }
           setCurrentView("profile");
         } else {
@@ -96,6 +115,8 @@ function App() {
     try {
       const id = await createProfile(profile);
       setProfileId(id);
+      setIsNewProfile(true);
+      try { localStorage.setItem(`kairo_profile_${id}`, JSON.stringify(profile)); } catch {}
       history.replaceState(null, "", "?p=" + id);
     } catch (err) {
       console.error("Failed to save profile:", err);
@@ -140,6 +161,23 @@ function App() {
     });
   };
 
+  const addNewActionItems = (
+    items: { action: string; gap: string }[] | undefined,
+    currentItems: ActionItem[]
+  ): ActionItem[] => {
+    if (!items || items.length === 0) return currentItems;
+    const activeCount = currentItems.filter((i) => !i.completed).length;
+    const room = 3 - activeCount;
+    if (room <= 0) return currentItems;
+    const newItems = items.slice(0, room).map((item, i) => ({
+      id: `action_${Date.now()}_${i}`,
+      action: item.action,
+      gap: item.gap,
+      completed: false,
+    }));
+    return [...currentItems, ...newItems];
+  };
+
   const handleAdvisorMessage = async (userText: string) => {
     const userMsg: AdvisorMessage = {
       id: `msg_${Date.now()}_user`,
@@ -165,14 +203,19 @@ function App() {
         role: "assistant",
         content: response.message,
         timestamp: new Date().toISOString(),
+        suggestions: response.suggestions,
       };
 
       const allMessages = [...updatedMessages, assistantMsg];
       setAdvisorMessages(allMessages);
 
+      // Add action items if room
+      const updatedItems = addNewActionItems(response.actionItems, actionItems);
+      setActionItems(updatedItems);
+
       // Persist to profile
       setProfile((prev) => {
-        const next = { ...prev, advisorMessages: allMessages, lastUpdated: new Date() };
+        const next = { ...prev, advisorMessages: allMessages, actionItems: updatedItems, lastUpdated: new Date() };
         if (profileId) debouncedSave(profileId, next);
         return next;
       });
@@ -211,13 +254,18 @@ function App() {
         content: response.message,
         timestamp: new Date().toISOString(),
         ...(response.analysis && { analysis: response.analysis }),
+        suggestions: response.suggestions,
       };
 
       setAdvisorMessages([firstMsg]);
 
+      // Add initial action items
+      const updatedItems = addNewActionItems(response.actionItems, actionItems);
+      setActionItems(updatedItems);
+
       // Persist to profile
       setProfile((prev) => {
-        const next = { ...prev, advisorMessages: [firstMsg], lastUpdated: new Date() };
+        const next = { ...prev, advisorMessages: [firstMsg], actionItems: updatedItems, lastUpdated: new Date() };
         if (profileId) debouncedSave(profileId, next);
         return next;
       });
@@ -229,7 +277,23 @@ function App() {
     }
   };
 
+  const handleToggleActionItem = (itemId: string) => {
+    setActionItems((prev) => {
+      const updated = prev.map((item) =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item
+      );
+      // Persist
+      setProfile((p) => {
+        const next = { ...p, actionItems: updated, lastUpdated: new Date() };
+        if (profileId) debouncedSave(profileId, next);
+        return next;
+      });
+      return updated;
+    });
+  };
+
   const handleStartOver = () => {
+    if (profileId) try { localStorage.removeItem(`kairo_profile_${profileId}`); } catch {}
     setCurrentView("input");
     setRawText("");
     setProfile({ activities: [], lastUpdated: new Date() });
@@ -238,6 +302,7 @@ function App() {
     setError(null);
     setProfileId(null);
     setAdvisorMessages([]);
+    setActionItems([]);
     advisorInitRef.current = false;
     history.replaceState(null, "", "/");
   };
@@ -282,6 +347,10 @@ function App() {
           onAdvisorMessage={handleAdvisorMessage}
           advisorLoading={advisorLoading}
           onAdvisorTabOpened={handleAdvisorTabOpened}
+          actionItems={actionItems}
+          onToggleActionItem={handleToggleActionItem}
+          profileId={profileId}
+          isNewProfile={isNewProfile}
         />
       )}
     </div>
