@@ -1,9 +1,14 @@
 @import "tailwindcss";
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background: #080818;
   min-height: 100vh;
   position: relative;
+  overflow-x: hidden;
 }
 
 body::before {

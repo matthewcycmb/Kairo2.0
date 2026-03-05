@@ -75,28 +75,31 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-4 py-12">
       <div className="mb-8 text-center">
-        <h1 className="mb-2 text-4xl font-bold tracking-tight text-white">
+        <h1 className="mb-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
           Kairo
         </h1>
-        <p className="text-lg text-white/60">
+        <p className="text-base text-white/60 sm:text-lg">
           Dump your activities. See what you've actually done.
+        </p>
+        <p className="mt-1.5 text-xs text-white/35 sm:text-sm">
+          This becomes your organized student profile — include everything you've done in high school.
         </p>
       </div>
 
-      <div className="w-full rounded-2xl border border-white/[0.15] bg-white/[0.08] p-6 backdrop-blur-[40px]">
+      <div className="w-full rounded-2xl border border-white/[0.15] bg-white/[0.08] p-4 backdrop-blur-[40px] sm:p-6">
         <div className="relative">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={PLACEHOLDER}
-            rows={10}
-            className="w-full resize-none rounded-xl border border-white/[0.12] bg-white/[0.06] p-4 pr-14 text-white shadow-sm placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
+            rows={8}
+            className="w-full resize-none rounded-xl border border-white/[0.12] bg-white/[0.06] p-3 pr-12 text-sm text-white shadow-sm placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10 sm:p-4 sm:pr-14 sm:text-base"
           />
           {supportsVoice && (
             <button
               onClick={toggleListening}
               type="button"
-              className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full transition-all ${
+              className={`absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full transition-all sm:right-3 sm:top-3 ${
                 isListening
                   ? "animate-pulse bg-red-500 text-white shadow-lg"
                   : "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
@@ -126,7 +129,7 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
           <button
             onClick={() => onSubmit(text.trim())}
             disabled={!canSubmit}
-            className="rounded-xl border border-white/[0.15] bg-white/[0.15] px-6 py-2.5 font-medium text-white transition-colors hover:bg-white/[0.22] disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl border border-white/[0.15] bg-white/[0.15] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.22] disabled:cursor-not-allowed disabled:opacity-40 sm:px-6 sm:text-base"
           >
             Let's go →
           </button>

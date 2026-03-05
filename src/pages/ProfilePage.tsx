@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
 import type { ParsedActivity } from "../types/activity";
-import type { StudentProfile, FollowUpQuestion } from "../types/profile";
+import type { StudentProfile, FollowUpQuestion, AdvisorMessage } from "../types/profile";
 import { groupByCategory, copyProfileToClipboard } from "../lib/profileUtils";
 import { callApi } from "../lib/apiClient";
 import CategorySection from "../components/CategorySection";
 import LoadingSpinner from "../components/LoadingSpinner";
+import AdvisorChat from "../components/AdvisorChat";
 
 interface ProfilePageProps {
   profile: StudentProfile;
@@ -15,6 +16,10 @@ interface ProfilePageProps {
   setError: (error: string | null) => void;
   isLoading: boolean;
   error: string | null;
+  advisorMessages: AdvisorMessage[];
+  onAdvisorMessage: (text: string) => void;
+  advisorLoading: boolean;
+  onAdvisorTabOpened: () => void;
 }
 
 export default function ProfilePage({
@@ -26,7 +31,12 @@ export default function ProfilePage({
   setError,
   isLoading,
   error,
+  advisorMessages,
+  onAdvisorMessage,
+  advisorLoading,
+  onAdvisorTabOpened,
 }: ProfilePageProps) {
+  const [activeTab, setActiveTab] = useState<"profile" | "advisor">("profile");
   const [forgotStep, setForgotStep] = useState<"idle" | "input" | "followup">("idle");
   const [forgotText, setForgotText] = useState("");
   const [newActivities, setNewActivities] = useState<ParsedActivity[]>([]);
@@ -185,158 +195,208 @@ export default function ProfilePage({
     }
   };
 
+  const handleTabClick = (tab: "profile" | "advisor") => {
+    setActiveTab(tab);
+    if (tab === "advisor") onAdvisorTabOpened();
+  };
+
   return (
-    <div className="mx-auto min-h-screen max-w-3xl px-4 py-8">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-8">
+      {/* Header */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Your Profile</h1>
           <p className="text-sm text-white/40">
-            Click text to edit, or expand activities for more depth
+            {activeTab === "profile"
+              ? "Click text to edit, or expand activities for more depth"
+              : "Get personalized advice based on your profile"}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleCopy}
-            className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2 text-sm font-medium text-white backdrop-blur-[40px] transition-colors hover:bg-white/[0.22]"
-          >
-            {copied ? "Copied!" : "Copy to Clipboard"}
-          </button>
-          <button
-            onClick={onStartOver}
-            className="rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-2 text-sm font-medium text-white/70 backdrop-blur-[40px] transition-colors hover:bg-white/[0.12] hover:text-white"
-          >
-            Start Over
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/20 p-3 text-sm text-red-300">
-          {error}
-          <button
-            onClick={() => setError(null)}
-            className="ml-2 font-medium underline"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {Array.from(grouped.entries()).map(([category, activities]) => (
-        <CategorySection
-          key={category}
-          category={category}
-          activities={activities}
-          onEditActivity={onEditActivity}
-        />
-      ))}
-
-      {profile.activities.length === 0 && (
-        <div className="py-12 text-center text-white/40">
-          No activities yet. Something went wrong — try starting over.
-        </div>
-      )}
-
-      {isLoading && (
-        <LoadingSpinner
-          message={forgotStep === "followup" ? "Enriching new activities..." : "Parsing new activities..."}
-        />
-      )}
-
-      <div className="mt-12 border-t border-white/10 pt-4">
-        {forgotStep === "idle" && (
-          <button
-            onClick={() => setForgotStep("input")}
-            className="w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-3 text-sm font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70"
-          >
-            + I forgot something
-          </button>
-        )}
-
-        {forgotStep === "input" && (
-          <div className="space-y-2">
-            <textarea
-              value={forgotText}
-              onChange={(e) => setForgotText(e.target.value)}
-              placeholder="I also do..."
-              rows={2}
-              className="w-full resize-none rounded-lg border border-white/[0.15] bg-white/[0.05] p-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleForgotSubmit}
-                disabled={forgotText.trim().length < 10 || isLoading}
-                className="rounded-lg border border-white/[0.12] bg-white/[0.10] px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:opacity-40"
-              >
-                Add to Profile
-              </button>
-              <button
-                onClick={resetForgotState}
-                className="px-3 py-1.5 text-xs text-white/40 hover:text-white/60"
-              >
-                Cancel
-              </button>
-            </div>
+        {activeTab === "profile" && (
+          <div className="flex w-full gap-2 sm:w-auto">
+            <button
+              onClick={handleCopy}
+              className="flex-1 rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2.5 text-sm font-medium text-white backdrop-blur-[40px] transition-colors hover:bg-white/[0.22] sm:flex-none"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+            <button
+              onClick={onStartOver}
+              className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/70 backdrop-blur-[40px] transition-colors hover:bg-white/[0.12] hover:text-white sm:flex-none"
+            >
+              Start Over
+            </button>
           </div>
         )}
+      </div>
 
-        {forgotStep === "followup" && !isLoading && currentForgotActivity && (
-          <div className="space-y-3 rounded-xl border border-white/[0.12] bg-white/[0.06] p-4 backdrop-blur-[40px]">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-blue-400">
-                {currentForgotActivity.activityName}
-              </p>
-              <span className="text-xs text-white/40">
-                Activity {currentActivityIdx + 1} of {totalForgotActivities}
-              </span>
-            </div>
+      {/* Tab bar */}
+      <div className="mb-6 flex gap-1 rounded-xl border border-white/[0.12] bg-white/[0.06] p-1 backdrop-blur-[40px]">
+        <button
+          onClick={() => handleTabClick("profile")}
+          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            activeTab === "profile"
+              ? "bg-white/[0.15] text-white"
+              : "text-white/50 hover:text-white/70"
+          }`}
+        >
+          Profile
+        </button>
+        <button
+          onClick={() => handleTabClick("advisor")}
+          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            activeTab === "advisor"
+              ? "bg-white/[0.15] text-white"
+              : "text-white/50 hover:text-white/70"
+          }`}
+        >
+          Advisor
+        </button>
+      </div>
 
-            {currentForgotActivity.questions.map((q) => (
-              <div
-                key={q.id}
-                className="rounded-lg border border-white/[0.10] bg-white/[0.05] p-3"
+      {/* Profile tab content */}
+      {activeTab === "profile" && (
+        <>
+          {error && (
+            <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/20 p-3 text-sm text-red-300">
+              {error}
+              <button
+                onClick={() => setError(null)}
+                className="ml-2 font-medium underline"
               >
-                <p className="mb-2 text-sm text-white/80">{q.question}</p>
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {Array.from(grouped.entries()).map(([category, activities]) => (
+            <CategorySection
+              key={category}
+              category={category}
+              activities={activities}
+              onEditActivity={onEditActivity}
+            />
+          ))}
+
+          {profile.activities.length === 0 && (
+            <div className="py-12 text-center text-white/40">
+              No activities yet. Something went wrong — try starting over.
+            </div>
+          )}
+
+          {isLoading && (
+            <LoadingSpinner
+              message={forgotStep === "followup" ? "Enriching new activities..." : "Parsing new activities..."}
+            />
+          )}
+
+          <div className="mt-12 border-t border-white/10 pt-4">
+            {forgotStep === "idle" && (
+              <button
+                onClick={() => setForgotStep("input")}
+                className="w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-3 text-sm font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70"
+              >
+                + I forgot something
+              </button>
+            )}
+
+            {forgotStep === "input" && (
+              <div className="space-y-2">
+                <textarea
+                  value={forgotText}
+                  onChange={(e) => setForgotText(e.target.value)}
+                  placeholder="I also do..."
+                  rows={2}
+                  className="w-full resize-none rounded-lg border border-white/[0.15] bg-white/[0.05] p-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
+                />
                 <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={answers[q.id] === "__SKIPPED__" ? "" : answers[q.id] || ""}
-                    onChange={(e) => handleForgotAnswerChange(q.id, e.target.value)}
-                    placeholder="Your answer..."
-                    disabled={answers[q.id] === "__SKIPPED__"}
-                    className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
-                  />
                   <button
-                    onClick={() => handleForgotSkip(q.id)}
-                    className={`shrink-0 px-3 py-1.5 text-xs font-medium transition-colors ${
-                      answers[q.id] === "__SKIPPED__"
-                        ? "text-white/50"
-                        : "text-white/40 hover:text-white/60"
-                    }`}
+                    onClick={handleForgotSubmit}
+                    disabled={forgotText.trim().length < 10 || isLoading}
+                    className="rounded-lg border border-white/[0.12] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:opacity-40"
                   >
-                    {answers[q.id] === "__SKIPPED__" ? "Skipped" : "Skip"}
+                    Add to Profile
+                  </button>
+                  <button
+                    onClick={resetForgotState}
+                    className="px-4 py-2 text-sm text-white/40 hover:text-white/60"
+                  >
+                    Cancel
                   </button>
                 </div>
               </div>
-            ))}
+            )}
 
-            <button
-              onClick={isLastForgotActivity ? handleForgotFinish : handleForgotNext}
-              disabled={!currentActivityDone}
-              className="w-full rounded-lg border border-white/[0.12] bg-white/[0.10] py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {isLastForgotActivity ? "Add to Profile" : "Next Activity →"}
-            </button>
+            {forgotStep === "followup" && !isLoading && currentForgotActivity && (
+              <div className="space-y-3 rounded-xl border border-white/[0.12] bg-white/[0.06] p-4 backdrop-blur-[40px]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="min-w-0 truncate text-sm font-semibold text-blue-400">
+                    {currentForgotActivity.activityName}
+                  </p>
+                  <span className="shrink-0 text-xs text-white/40">
+                    {currentActivityIdx + 1}/{totalForgotActivities}
+                  </span>
+                </div>
 
-            <button
-              onClick={resetForgotState}
-              className="w-full py-1 text-xs text-white/40 hover:text-white/60"
-            >
-              Cancel
-            </button>
+                {currentForgotActivity.questions.map((q) => (
+                  <div
+                    key={q.id}
+                    className="rounded-lg border border-white/[0.10] bg-white/[0.05] p-3"
+                  >
+                    <p className="mb-2 text-sm text-white/80">{q.question}</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={answers[q.id] === "__SKIPPED__" ? "" : answers[q.id] || ""}
+                        onChange={(e) => handleForgotAnswerChange(q.id, e.target.value)}
+                        placeholder="Your answer..."
+                        disabled={answers[q.id] === "__SKIPPED__"}
+                        className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
+                      />
+                      <button
+                        onClick={() => handleForgotSkip(q.id)}
+                        className={`shrink-0 px-3 py-2 text-xs font-medium transition-colors ${
+                          answers[q.id] === "__SKIPPED__"
+                            ? "text-white/50"
+                            : "text-white/40 hover:text-white/60"
+                        }`}
+                      >
+                        {answers[q.id] === "__SKIPPED__" ? "Skipped" : "Skip"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  onClick={isLastForgotActivity ? handleForgotFinish : handleForgotNext}
+                  disabled={!currentActivityDone}
+                  className="w-full rounded-lg border border-white/[0.12] bg-white/[0.10] py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {isLastForgotActivity ? "Add to Profile" : "Next Activity →"}
+                </button>
+
+                <button
+                  onClick={resetForgotState}
+                  className="w-full py-1 text-xs text-white/40 hover:text-white/60"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
+
+      {/* Advisor tab content */}
+      {activeTab === "advisor" && (
+        <div className="flex-1">
+          <AdvisorChat
+            advisorMessages={advisorMessages}
+            onNewMessage={onAdvisorMessage}
+            isLoading={advisorLoading}
+          />
+        </div>
+      )}
     </div>
   );
 }

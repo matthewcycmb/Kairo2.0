@@ -35,7 +35,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
     setLoading(true);
     try {
       const response = await callApi({ type: "expand", activity });
-      setExpandQuestions(response.questions);
+      setExpandQuestions(response.questions.slice(0, 2));
       setExpanding(true);
     } catch {
       // silently fail
@@ -86,12 +86,14 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       }`}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
-        <EditableField
-          value={activity.name}
-          onSave={(name) => onEdit(activity.id, { name })}
-          className={`font-semibold ${isRich ? "text-lg text-white" : "text-base text-white/90"}`}
-          as="h3"
-        />
+        <div className="min-w-0 flex-1">
+          <EditableField
+            value={activity.name}
+            onSave={(name) => onEdit(activity.id, { name })}
+            className={`font-semibold ${isRich ? "text-lg text-white" : "text-base text-white/90"}`}
+            as="h3"
+          />
+        </div>
         {activity.role && (
           <span className="shrink-0 rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs font-medium text-blue-300">
             {activity.role}
@@ -166,7 +168,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
                 value={expandAnswers[i] || ""}
                 onChange={(e) => setExpandAnswers((prev) => ({ ...prev, [i]: e.target.value }))}
                 placeholder="Your answer..."
-                className="w-full rounded-lg border border-white/[0.15] bg-white/[0.05] px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.15] bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
               />
             </div>
           ))}
@@ -174,13 +176,13 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
             <button
               onClick={handleSubmitExpand}
               disabled={!allExpandAnswered}
-              className="rounded-lg border border-white/[0.12] bg-white/[0.10] px-4 py-1.5 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:opacity-40"
+              className="rounded-lg border border-white/[0.12] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:opacity-40"
             >
               Save
             </button>
             <button
               onClick={() => { setExpanding(false); setExpandAnswers({}); }}
-              className="px-4 py-1.5 text-sm text-white/50 hover:text-white/70"
+              className="px-4 py-2 text-sm text-white/50 hover:text-white/70"
             >
               Cancel
             </button>

@@ -1,4 +1,4 @@
-import type { ParseRequest, FollowUpRequest, ParseResponse, FollowUpResponse, ExpandRequest, ExpandResponse, ExpandAnswerRequest, ExpandAnswerResponse } from "../types/profile";
+import type { ParseRequest, FollowUpRequest, ParseResponse, FollowUpResponse, ExpandRequest, ExpandResponse, ExpandAnswerRequest, ExpandAnswerResponse, AdvisorRequest, AdvisorResponse } from "../types/profile";
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
@@ -7,13 +7,14 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-type ApiRequest = ParseRequest | FollowUpRequest | ExpandRequest | ExpandAnswerRequest;
-type ApiResponse = ParseResponse | FollowUpResponse | ExpandResponse | ExpandAnswerResponse;
+type ApiRequest = ParseRequest | FollowUpRequest | ExpandRequest | ExpandAnswerRequest | AdvisorRequest;
+type ApiResponse = ParseResponse | FollowUpResponse | ExpandResponse | ExpandAnswerResponse | AdvisorResponse;
 
 export async function callApi(request: ParseRequest): Promise<ParseResponse>;
 export async function callApi(request: FollowUpRequest): Promise<FollowUpResponse>;
 export async function callApi(request: ExpandRequest): Promise<ExpandResponse>;
 export async function callApi(request: ExpandAnswerRequest): Promise<ExpandAnswerResponse>;
+export async function callApi(request: AdvisorRequest): Promise<AdvisorResponse>;
 export async function callApi(request: ApiRequest): Promise<ApiResponse> {
   let lastError: Error | null = null;
 

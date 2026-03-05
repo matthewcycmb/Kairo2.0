@@ -37,7 +37,7 @@ export default function EditableField({
             setIsEditing(false);
           }
         }}
-        className={`border-b-2 border-blue-400 bg-transparent outline-none ${className}`}
+        className={`w-full border-b-2 border-blue-400 bg-transparent outline-none ${className}`}
         autoFocus
       />
     );
@@ -49,7 +49,7 @@ export default function EditableField({
         setIsEditing(true);
         setDraft(value);
       }}
-      className={`cursor-pointer rounded px-1 hover:bg-white/10 ${className}`}
+      className={`cursor-pointer truncate rounded px-1 hover:bg-white/10 ${className}`}
       title="Click to edit"
     >
       {value}

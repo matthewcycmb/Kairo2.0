@@ -246,12 +246,12 @@ export default function ChatPage({
         {/* Current activity questions (one activity at a time) */}
         {!isLoading && !showGenerateButton && currentActivity && (
           <div className="mb-4 ml-2 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-blue-400">
+            <div className="flex items-center justify-between gap-2">
+              <p className="min-w-0 truncate text-sm font-semibold text-blue-400">
                 {currentActivity.activityName}
               </p>
-              <span className="text-xs text-white/40">
-                Activity {currentActivityIdx + 1} of {totalActivities}
+              <span className="shrink-0 text-xs text-white/40">
+                {currentActivityIdx + 1}/{totalActivities}
               </span>
             </div>
 
@@ -268,11 +268,11 @@ export default function ChatPage({
                     onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                     placeholder="Your answer..."
                     disabled={answers[q.id] === "__SKIPPED__"}
-                    className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
+                    className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
                   />
                   <button
                     onClick={() => handleSkip(q.id)}
-                    className={`shrink-0 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    className={`shrink-0 px-3 py-2 text-xs font-medium transition-colors ${
                       answers[q.id] === "__SKIPPED__"
                         ? "text-white/50"
                         : "text-white/40 hover:text-white/60"

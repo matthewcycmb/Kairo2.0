@@ -14,9 +14,31 @@ export interface FollowUpQuestion {
   skipped: boolean;
 }
 
+export interface StudentGoals {
+  grade: 9 | 10 | 11 | 12;
+  targetUniversities: string;
+  location: string;
+}
+
+export interface AdvisorAnalysis {
+  strengths: string[];
+  gaps: string[];
+  actionStep: string;
+}
+
+export interface AdvisorMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+  analysis?: AdvisorAnalysis;
+}
+
 export interface StudentProfile {
   activities: ParsedActivity[];
   lastUpdated: Date;
+  goals?: StudentGoals;
+  advisorMessages?: AdvisorMessage[];
 }
 
 export interface FollowUpRound {
@@ -25,7 +47,7 @@ export interface FollowUpRound {
   completed: boolean;
 }
 
-export type AppView = "input" | "chat" | "profile" | "loading";
+export type AppView = "input" | "chat" | "profile" | "goals" | "loading";
 
 export interface ParseRequest {
   type: "parse";
@@ -65,4 +87,16 @@ export interface ExpandResponse {
 
 export interface ExpandAnswerResponse {
   updatedActivity: ParsedActivity;
+}
+
+export interface AdvisorRequest {
+  type: "advisor";
+  profile: StudentProfile;
+  messages: AdvisorMessage[];
+  isFirstMessage: boolean;
+}
+
+export interface AdvisorResponse {
+  message: string;
+  analysis?: AdvisorAnalysis;
 }

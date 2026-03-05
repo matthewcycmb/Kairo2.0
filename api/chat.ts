@@ -144,6 +144,101 @@ Generate exactly 2 deeper follow-up questions to make this activity richer. Prio
 Respond with JSON: { "questions": ["question 1", "question 2"] }`;
 }
 
+interface AdvisorProfile {
+  activities: {
+    name: string;
+    category: string;
+    role?: string;
+    description: string;
+    achievements?: string[];
+    skills?: string[];
+    yearsActive?: string;
+    hoursPerWeek?: number | null;
+  }[];
+  goals?: {
+    grade: number;
+    targetUniversities: string;
+    location: string;
+  };
+}
+
+interface AdvisorMsg {
+  role: "user" | "assistant";
+  content: string;
+}
+
+function buildAdvisorSystemPrompt(profile: AdvisorProfile): string {
+  const activitiesSummary = profile.activities
+    .map((a) => {
+      const parts = [`• ${a.name} (${a.category})`];
+      if (a.role) parts.push(`  Role: ${a.role}`);
+      parts.push(`  ${a.description}`);
+      if (a.achievements?.length) parts.push(`  Achievements: ${a.achievements.join(", ")}`);
+      if (a.skills?.length) parts.push(`  Skills: ${a.skills.join(", ")}`);
+      if (a.yearsActive) parts.push(`  Duration: ${a.yearsActive}`);
+      if (a.hoursPerWeek) parts.push(`  Hours/week: ${a.hoursPerWeek}`);
+      return parts.join("\n");
+    })
+    .join("\n\n");
+
+  const goalsSection = profile.goals
+    ? `Grade: ${profile.goals.grade}\nTarget Universities: ${profile.goals.targetUniversities || "Not specified"}\nLocation: ${profile.goals.location || "Not specified"}`
+    : "No specific goals set yet.";
+
+  return `You are the Kairo Advisor — a knowledgeable, encouraging guidance counsellor for Canadian high school students. You have the student's full extracurricular profile and goals.
+
+STUDENT PROFILE:
+${activitiesSummary}
+
+GOALS:
+${goalsSection}
+
+Rules:
+- Always reference the student's actual activities by name — never give generic advice
+- Maximum 3 action items per response
+- Be specific: name real programs, competitions, scholarships, and opportunities
+- Suggest things relevant to Canadian students (Canadian universities, provincial programs, etc.)
+- Keep responses concise and conversational — no bullet-point walls
+- For follow-up messages, respond in plain conversational text
+- For the first analysis, respond in JSON as instructed
+- If the student asks something outside your scope, gently redirect to extracurricular/university planning`;
+}
+
+function buildAdvisorUserPrompt(
+  messages: AdvisorMsg[],
+  isFirstMessage: boolean
+): string {
+  if (isFirstMessage) {
+    return `This is your first analysis of the student's profile. Respond with a JSON object in this exact format:
+
+{
+  "strengths": [
+    "A specific strength citing an activity by name — 1 sentence each",
+    "Another strength — max 3 items"
+  ],
+  "gaps": [
+    "A specific gap or area to strengthen relative to their targets — 1 sentence each",
+    "Another gap — max 3 items"
+  ],
+  "actionStep": "One concrete, specific action they can take this week. Name a real program, event, or opportunity."
+}
+
+Rules:
+- Each strength must reference a specific activity from their profile by name
+- Each gap should be specific to their target universities/programs if set
+- The action step must be immediately actionable (this week) and specific — name real opportunities
+- Keep each item to 1 concise sentence
+- Return ONLY valid JSON, no extra text`;
+  }
+
+  const recent = messages.slice(-20);
+  const history = recent
+    .map((m) => `${m.role === "user" ? "Student" : "Advisor"}: ${m.content}`)
+    .join("\n\n");
+
+  return `Conversation so far:\n\n${history}\n\nRespond to the student's latest message. Be specific and reference their profile.`;
+}
+
 function buildExpandAnswerPrompt(
   activity: unknown,
   answers: { question: string; answer: string }[]
@@ -187,6 +282,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const body = req.body;
+
+    if (body.type === "advisor") {
+      const advisorSystem = buildAdvisorSystemPrompt(body.profile);
+      const advisorUser = buildAdvisorUserPrompt(body.messages || [], body.isFirstMessage);
+
+      const advisorMessage = await anthropic.messages.create({
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 1024,
+        system: advisorSystem,
+        messages: [{ role: "user", content: advisorUser }],
+      });
+
+      const advisorTextBlock = advisorMessage.content.find((block) => block.type === "text");
+      if (!advisorTextBlock || advisorTextBlock.type !== "text") {
+        return res.status(500).send("No text response from AI");
+      }
+
+      if (body.isFirstMessage) {
+        try {
+          const cleaned = advisorTextBlock.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+          const parsed = JSON.parse(cleaned);
+          const analysis = {
+            strengths: parsed.strengths || [],
+            gaps: parsed.gaps || [],
+            actionStep: parsed.actionStep || "",
+          };
+          // Build a plain-text fallback for the content field
+          const message = [
+            ...analysis.strengths.map((s: string) => `Strength: ${s}`),
+            ...analysis.gaps.map((g: string) => `Gap: ${g}`),
+            `Action: ${analysis.actionStep}`,
+          ].join("\n");
+          return res.status(200).json({ message, analysis });
+        } catch {
+          // Fallback: return as plain text if JSON parsing fails
+          return res.status(200).json({ message: advisorTextBlock.text });
+        }
+      }
+
+      return res.status(200).json({ message: advisorTextBlock.text });
+    }
+
     let userPrompt: string;
 
     if (body.type === "parse") {
