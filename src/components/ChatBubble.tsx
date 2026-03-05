@@ -11,8 +11,8 @@ export default function ChatBubble({ type, children }: ChatBubbleProps) {
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-3 ${
           isAi
-            ? "bg-white text-gray-800 shadow-sm border border-gray-100"
-            : "bg-blue-500 text-white"
+            ? "bg-white/[0.08] text-white backdrop-blur-[40px] border border-white/[0.12]"
+            : "bg-white/[0.04] text-white backdrop-blur-[40px] border border-white/[0.08]"
         }`}
       >
         {children}

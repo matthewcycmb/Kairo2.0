@@ -189,21 +189,21 @@ export default function ProfilePage({
     <div className="mx-auto min-h-screen max-w-3xl px-4 py-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Your Profile</h1>
-          <p className="text-sm text-gray-400">
+          <h1 className="text-2xl font-bold text-white">Your Profile</h1>
+          <p className="text-sm text-white/40">
             Click text to edit, or expand activities for more depth
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={handleCopy}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2 text-sm font-medium text-white backdrop-blur-[40px] transition-colors hover:bg-white/[0.22]"
           >
             {copied ? "Copied!" : "Copy to Clipboard"}
           </button>
           <button
             onClick={onStartOver}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            className="rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-2 text-sm font-medium text-white/70 backdrop-blur-[40px] transition-colors hover:bg-white/[0.12] hover:text-white"
           >
             Start Over
           </button>
@@ -211,7 +211,7 @@ export default function ProfilePage({
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+        <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/20 p-3 text-sm text-red-300">
           {error}
           <button
             onClick={() => setError(null)}
@@ -232,7 +232,7 @@ export default function ProfilePage({
       ))}
 
       {profile.activities.length === 0 && (
-        <div className="py-12 text-center text-gray-400">
+        <div className="py-12 text-center text-white/40">
           No activities yet. Something went wrong — try starting over.
         </div>
       )}
@@ -243,11 +243,11 @@ export default function ProfilePage({
         />
       )}
 
-      <div className="mt-12 border-t border-gray-100 pt-4">
+      <div className="mt-12 border-t border-white/10 pt-4">
         {forgotStep === "idle" && (
           <button
             onClick={() => setForgotStep("input")}
-            className="w-full rounded-lg border border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 transition-colors hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/50"
+            className="w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-3 text-sm font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70"
           >
             + I forgot something
           </button>
@@ -260,19 +260,19 @@ export default function ProfilePage({
               onChange={(e) => setForgotText(e.target.value)}
               placeholder="I also do..."
               rows={2}
-              className="w-full resize-none rounded-lg border border-gray-200 bg-white p-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none"
+              className="w-full resize-none rounded-lg border border-white/[0.15] bg-white/[0.05] p-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
             />
             <div className="flex gap-2">
               <button
                 onClick={handleForgotSubmit}
                 disabled={forgotText.trim().length < 10 || isLoading}
-                className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-300 disabled:opacity-40"
+                className="rounded-lg border border-white/[0.12] bg-white/[0.10] px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:opacity-40"
               >
                 Add to Profile
               </button>
               <button
                 onClick={resetForgotState}
-                className="rounded-lg px-3 py-1.5 text-xs text-gray-400 hover:bg-gray-100"
+                className="px-3 py-1.5 text-xs text-white/40 hover:text-white/60"
               >
                 Cancel
               </button>
@@ -281,12 +281,12 @@ export default function ProfilePage({
         )}
 
         {forgotStep === "followup" && !isLoading && currentForgotActivity && (
-          <div className="space-y-3 rounded-lg border border-blue-100 bg-blue-50/30 p-4">
+          <div className="space-y-3 rounded-xl border border-white/[0.12] bg-white/[0.06] p-4 backdrop-blur-[40px]">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-blue-600">
+              <p className="text-sm font-semibold text-blue-400">
                 {currentForgotActivity.activityName}
               </p>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-white/40">
                 Activity {currentActivityIdx + 1} of {totalForgotActivities}
               </span>
             </div>
@@ -294,9 +294,9 @@ export default function ProfilePage({
             {currentForgotActivity.questions.map((q) => (
               <div
                 key={q.id}
-                className="rounded-lg border border-gray-100 bg-white p-3"
+                className="rounded-lg border border-white/[0.10] bg-white/[0.05] p-3"
               >
-                <p className="mb-2 text-sm text-gray-700">{q.question}</p>
+                <p className="mb-2 text-sm text-white/80">{q.question}</p>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -304,14 +304,14 @@ export default function ProfilePage({
                     onChange={(e) => handleForgotAnswerChange(q.id, e.target.value)}
                     placeholder="Your answer..."
                     disabled={answers[q.id] === "__SKIPPED__"}
-                    className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400"
+                    className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
                   />
                   <button
                     onClick={() => handleForgotSkip(q.id)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    className={`shrink-0 px-3 py-1.5 text-xs font-medium transition-colors ${
                       answers[q.id] === "__SKIPPED__"
-                        ? "bg-gray-200 text-gray-500"
-                        : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        ? "text-white/50"
+                        : "text-white/40 hover:text-white/60"
                     }`}
                   >
                     {answers[q.id] === "__SKIPPED__" ? "Skipped" : "Skip"}
@@ -323,14 +323,14 @@ export default function ProfilePage({
             <button
               onClick={isLastForgotActivity ? handleForgotFinish : handleForgotNext}
               disabled={!currentActivityDone}
-              className="w-full rounded-lg bg-blue-500 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+              className="w-full rounded-lg border border-white/[0.12] bg-white/[0.10] py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isLastForgotActivity ? "Add to Profile" : "Next Activity →"}
             </button>
 
             <button
               onClick={resetForgotState}
-              className="w-full py-1 text-xs text-gray-400 hover:text-gray-500"
+              className="w-full py-1 text-xs text-white/40 hover:text-white/60"
             >
               Cancel
             </button>

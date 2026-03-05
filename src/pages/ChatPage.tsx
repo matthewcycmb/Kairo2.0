@@ -232,11 +232,11 @@ export default function ChatPage({
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4 py-6">
       <div className="mb-4 text-center">
-        <h1 className="text-xl font-bold text-gray-900">Kairo</h1>
-        <p className="text-sm text-gray-400">Let's fill in the details</p>
+        <h1 className="text-xl font-bold text-white">Kairo</h1>
+        <p className="text-sm text-white/40">Let's fill in the details</p>
       </div>
 
-      <div className="flex-1 space-y-1 overflow-y-auto pb-4">
+      <div className="flex-1 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.15] bg-white/[0.08] p-4 backdrop-blur-[40px]">
         {messages.map((msg) => (
           <ChatBubble key={msg.id} type={msg.type}>
             <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
@@ -247,10 +247,10 @@ export default function ChatPage({
         {!isLoading && !showGenerateButton && currentActivity && (
           <div className="mb-4 ml-2 space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-blue-600">
+              <p className="text-sm font-semibold text-blue-400">
                 {currentActivity.activityName}
               </p>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-white/40">
                 Activity {currentActivityIdx + 1} of {totalActivities}
               </span>
             </div>
@@ -258,9 +258,9 @@ export default function ChatPage({
             {currentActivity.questions.map((q) => (
               <div
                 key={q.id}
-                className="rounded-lg border border-gray-100 bg-gray-50 p-3"
+                className="rounded-lg border border-white/[0.10] bg-white/[0.05] p-3"
               >
-                <p className="mb-2 text-sm text-gray-700">{q.question}</p>
+                <p className="mb-2 text-sm text-white/80">{q.question}</p>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -268,14 +268,14 @@ export default function ChatPage({
                     onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                     placeholder="Your answer..."
                     disabled={answers[q.id] === "__SKIPPED__"}
-                    className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400"
+                    className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
                   />
                   <button
                     onClick={() => handleSkip(q.id)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    className={`shrink-0 px-3 py-1.5 text-xs font-medium transition-colors ${
                       answers[q.id] === "__SKIPPED__"
-                        ? "bg-gray-200 text-gray-500"
-                        : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        ? "text-white/50"
+                        : "text-white/40 hover:text-white/60"
                     }`}
                   >
                     {answers[q.id] === "__SKIPPED__" ? "Skipped" : "Skip"}
@@ -289,7 +289,7 @@ export default function ChatPage({
         {isLoading && <LoadingSpinner message="Kairo is thinking..." />}
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="rounded-lg border border-red-500/30 bg-red-500/20 p-3 text-sm text-red-300">
             {error}
             <button
               onClick={() => setError(null)}
@@ -303,11 +303,11 @@ export default function ChatPage({
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-gray-100 pt-4">
+      <div className="border-t border-white/10 pt-4">
         {showGenerateButton ? (
           <button
             onClick={onGenerateProfile}
-            className="w-full rounded-xl bg-blue-500 py-3 font-medium text-white shadow-sm transition-all hover:bg-blue-600"
+            className="w-full rounded-xl border border-white/[0.15] bg-white/[0.15] py-3 font-medium text-white transition-colors hover:bg-white/[0.22]"
           >
             Generate My Profile
           </button>
@@ -317,7 +317,7 @@ export default function ChatPage({
             <button
               onClick={isLastActivity ? handleFinishQuestions : handleNextActivity}
               disabled={!currentActivityDone}
-              className="w-full rounded-xl bg-blue-500 py-3 font-medium text-white shadow-sm transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+              className="w-full rounded-xl border border-white/[0.12] bg-white/[0.10] py-3 font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isLastActivity ? "Submit Answers" : "Next Activity →"}
             </button>

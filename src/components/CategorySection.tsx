@@ -15,7 +15,7 @@ export default function CategorySection({
 }: CategorySectionProps) {
   return (
     <section className="mb-8">
-      <h2 className="mb-4 text-lg font-bold text-gray-800">
+      <h2 className="mb-4 text-lg font-bold text-white">
         {getCategoryDisplayName(category)}
       </h2>
       <div className="space-y-4">

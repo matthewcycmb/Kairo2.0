@@ -49,7 +49,7 @@ export default function EditableField({
         setIsEditing(true);
         setDraft(value);
       }}
-      className={`cursor-pointer rounded px-1 hover:bg-blue-50 ${className}`}
+      className={`cursor-pointer rounded px-1 hover:bg-white/10 ${className}`}
       title="Click to edit"
     >
       {value}

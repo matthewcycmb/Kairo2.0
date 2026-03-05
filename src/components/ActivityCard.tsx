@@ -77,23 +77,23 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
 
   return (
     <div
-      className={`rounded-xl border p-4 transition-all ${
+      className={`rounded-xl border p-4 transition-all backdrop-blur-[40px] hover:bg-white/[0.10] ${
         isRich
-          ? "border-blue-200 bg-white shadow-md"
+          ? "border-white/[0.15] bg-white/[0.08]"
           : isShallow
-            ? "border-dashed border-gray-300 bg-gray-50/50"
-            : "border-gray-200 bg-white shadow-sm"
+            ? "border-white/[0.10] bg-white/[0.04]"
+            : "border-white/[0.12] bg-white/[0.06]"
       }`}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <EditableField
           value={activity.name}
           onSave={(name) => onEdit(activity.id, { name })}
-          className={`font-semibold ${isRich ? "text-lg text-gray-900" : "text-base text-gray-700"}`}
+          className={`font-semibold ${isRich ? "text-lg text-white" : "text-base text-white/90"}`}
           as="h3"
         />
         {activity.role && (
-          <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+          <span className="shrink-0 rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs font-medium text-blue-300">
             {activity.role}
           </span>
         )}
@@ -102,21 +102,21 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       <EditableField
         value={activity.description}
         onSave={(description) => onEdit(activity.id, { description })}
-        className="text-sm text-gray-600"
+        className="text-sm text-white/70"
         as="p"
       />
 
       {activity.details.length > 0 && (
         <ul className="mt-2 space-y-1">
           {activity.details.map((detail, i) => (
-            <li key={i} className="text-sm text-gray-500 before:mr-1.5 before:content-['•']">
+            <li key={i} className="text-sm text-white/60 before:mr-1.5 before:content-['•']">
               {detail}
             </li>
           ))}
         </ul>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/40">
         {activity.yearsActive && <span>{activity.yearsActive}</span>}
         {activity.hoursPerWeek && <span>{activity.hoursPerWeek} hrs/week</span>}
       </div>
@@ -126,7 +126,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
           {activity.achievements.map((achievement, i) => (
             <span
               key={i}
-              className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-medium text-yellow-700"
+              className="rounded-full bg-yellow-500/15 px-2.5 py-0.5 text-xs font-medium text-yellow-300"
             >
               {achievement}
             </span>
@@ -139,7 +139,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
           {activity.skills.map((skill, i) => (
             <span
               key={i}
-              className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600"
+              className="rounded-full border border-white/[0.10] bg-white/[0.08] px-2.5 py-0.5 text-xs text-white/70"
             >
               {skill}
             </span>
@@ -148,7 +148,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       )}
 
       {isShallow && !expanding && !loading && (
-        <p className="mt-3 text-xs text-gray-400 italic">
+        <p className="mt-3 text-xs text-white/40 italic">
           This could be stronger — add more detail
         </p>
       )}
@@ -157,16 +157,16 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       {loading && <LoadingSpinner message="Thinking..." />}
 
       {expanding && !loading && (
-        <div className="mt-4 space-y-3 border-t border-gray-100 pt-3">
+        <div className="mt-4 space-y-3 border-t border-white/10 pt-3">
           {expandQuestions.map((q, i) => (
             <div key={i}>
-              <p className="mb-1 text-sm text-gray-700">{q}</p>
+              <p className="mb-1 text-sm text-white/80">{q}</p>
               <input
                 type="text"
                 value={expandAnswers[i] || ""}
                 onChange={(e) => setExpandAnswers((prev) => ({ ...prev, [i]: e.target.value }))}
                 placeholder="Your answer..."
-                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.15] bg-white/[0.05] px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
               />
             </div>
           ))}
@@ -174,13 +174,13 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
             <button
               onClick={handleSubmitExpand}
               disabled={!allExpandAnswered}
-              className="rounded-lg bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-40"
+              className="rounded-lg border border-white/[0.12] bg-white/[0.10] px-4 py-1.5 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:opacity-40"
             >
               Save
             </button>
             <button
               onClick={() => { setExpanding(false); setExpandAnswers({}); }}
-              className="rounded-lg px-4 py-1.5 text-sm text-gray-500 hover:bg-gray-100"
+              className="px-4 py-1.5 text-sm text-white/50 hover:text-white/70"
             >
               Cancel
             </button>
@@ -193,13 +193,11 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
           onClick={handleExpand}
           className={
             isShallow
-              ? "mt-3 w-full rounded-lg bg-blue-500 py-2 text-sm font-medium text-white hover:bg-blue-600"
-              : isRich
-                ? "mt-3 rounded-lg border border-blue-200 px-4 py-1.5 text-sm text-blue-500 hover:border-blue-300 hover:text-blue-600"
-                : "mt-3 rounded-lg border border-blue-200 px-4 py-1.5 text-sm font-medium text-blue-500 hover:bg-blue-50"
+              ? "mt-3 w-full rounded-lg border border-white/[0.12] bg-white/[0.06] py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.12]"
+              : "mt-3 inline-flex items-center gap-1 rounded-full border border-white/[0.10] bg-white/[0.06] px-3 py-1 text-xs text-white/60 transition-colors hover:bg-white/[0.12] hover:text-white/80"
           }
         >
-          {isShallow ? "Add more detail +" : isRich ? "Expand this" : "Add more detail"}
+          {isShallow ? "Add more detail +" : isRich ? <>Expand this <span aria-hidden>→</span></> : <>Add more detail <span aria-hidden>→</span></>}
         </button>
       )}
     </div>
