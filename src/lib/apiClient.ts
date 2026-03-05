@@ -2,9 +2,16 @@ import type { ParseRequest, FollowUpRequest, ParseResponse, FollowUpResponse, Ex
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
+const FETCH_TIMEOUT_MS = 45_000; // 45 seconds
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
 type ApiRequest = ParseRequest | FollowUpRequest | ExpandRequest | ExpandAnswerRequest | AdvisorRequest;
@@ -20,29 +27,42 @@ export async function callApi(request: ApiRequest): Promise<ApiResponse> {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetchWithTimeout("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
-      });
+      }, FETCH_TIMEOUT_MS);
 
+      // Only retry on 429 or 5xx (transient errors), not 4xx (permanent)
       if ((response.status === 429 || response.status >= 500) && attempt < MAX_RETRIES) {
         await sleep(RETRY_DELAY_MS * (attempt + 1));
         continue;
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `API error: ${response.status}`);
+        let errorText: string;
+        try {
+          const json = await response.json();
+          errorText = json.error || `Request failed (${response.status})`;
+        } catch {
+          errorText = `Request failed (${response.status})`;
+        }
+        throw new Error(errorText);
       }
 
       return response.json();
     } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      if (attempt < MAX_RETRIES) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        lastError = new Error("Request timed out — please try again");
+      } else {
+        lastError = err instanceof Error ? err : new Error(String(err));
+      }
+      // Only retry on network errors or timeouts, not on user-facing errors
+      if (attempt < MAX_RETRIES && (lastError.message.includes("timed out") || lastError.message.includes("fetch"))) {
         await sleep(RETRY_DELAY_MS * (attempt + 1));
         continue;
       }
+      break;
     }
   }
 

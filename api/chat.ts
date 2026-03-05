@@ -10,6 +10,40 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// --- Rate limiting (in-memory, per Vercel instance) ---
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 10; // max requests per window per IP
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX;
+}
+
+// Clean up stale entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.resetAt) rateLimitMap.delete(ip);
+  }
+}, 300_000);
+
+// --- Input validation ---
+const MAX_TEXT_LENGTH = 10_000;
+const MAX_ACTIVITIES = 50;
+const MAX_ANSWERS = 50;
+const MAX_MESSAGES = 30;
+
+function getClientIp(req: VercelRequest): string {
+  return (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || "unknown";
+}
+
 const systemPrompt = `You are Kairo, a friendly assistant that helps Canadian high school students (grades 9-12) organize their extracurricular activities into clear, categorized profiles. You speak in a casual, encouraging tone — like a chill guidance counsellor who actually gets it.
 
 Your job is to take messy brain dumps of activities and turn them into structured profiles. You categorize activities into these groups:
@@ -311,8 +345,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).send("Method not allowed");
   }
 
+  const ip = getClientIp(req);
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ error: "Too many requests — please wait a minute" });
+  }
+
   try {
     const body = req.body;
+    if (!body || typeof body.type !== "string") {
+      return res.status(400).json({ error: "Invalid request" });
+    }
+
+    // Input validation per type
+    if (body.type === "parse") {
+      if (typeof body.text !== "string" || body.text.trim().length < 20 || body.text.length > MAX_TEXT_LENGTH) {
+        return res.status(400).json({ error: "Text must be 20-10,000 characters" });
+      }
+    } else if (body.type === "followup") {
+      if (!Array.isArray(body.activities) || body.activities.length > MAX_ACTIVITIES) {
+        return res.status(400).json({ error: "Invalid activities" });
+      }
+      if (!Array.isArray(body.answers) || body.answers.length > MAX_ANSWERS) {
+        return res.status(400).json({ error: "Invalid answers" });
+      }
+    } else if (body.type === "expand") {
+      if (!body.activity || typeof body.activity.name !== "string") {
+        return res.status(400).json({ error: "Invalid activity" });
+      }
+    } else if (body.type === "expand-answer") {
+      if (!body.activity || !Array.isArray(body.answers) || body.answers.length > MAX_ANSWERS) {
+        return res.status(400).json({ error: "Invalid request data" });
+      }
+    } else if (body.type === "advisor") {
+      if (!body.profile || !Array.isArray(body.profile.activities)) {
+        return res.status(400).json({ error: "Invalid profile" });
+      }
+      if (body.profile.activities.length > MAX_ACTIVITIES) {
+        return res.status(400).json({ error: "Too many activities" });
+      }
+      if (body.messages && (!Array.isArray(body.messages) || body.messages.length > MAX_MESSAGES)) {
+        return res.status(400).json({ error: "Too many messages" });
+      }
+    } else {
+      return res.status(400).json({ error: "Invalid request type" });
+    }
 
     if (body.type === "advisor") {
       const advisorSystem = buildAdvisorSystemPrompt(body.profile);
