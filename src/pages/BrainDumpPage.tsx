@@ -102,9 +102,6 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
           Kairo
         </h1>
         <p className="text-base text-white/60 sm:text-lg">
-          Dump your activities. See what you've actually done.
-        </p>
-        <p className="mt-1.5 text-xs text-white/35 sm:text-sm">
           Turn your scattered ECs into an organized portfolio
         </p>
       </div>
