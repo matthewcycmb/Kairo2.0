@@ -24,7 +24,6 @@ interface ProfilePageProps {
   actionItems: ActionItem[];
   onToggleActionItem: (id: string) => void;
   profileId: string | null;
-  isNewProfile: boolean;
 }
 
 export default function ProfilePage({
@@ -43,7 +42,6 @@ export default function ProfilePage({
   actionItems,
   onToggleActionItem,
   profileId,
-  isNewProfile,
 }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState<"profile" | "advisor">("profile");
   const [forgotStep, setForgotStep] = useState<"idle" | "input" | "followup">("idle");

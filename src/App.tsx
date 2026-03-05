@@ -36,8 +36,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(initialProfileId);
-  const [isNewProfile, setIsNewProfile] = useState(false);
-
   // Advisor state
   const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>(cachedProfile?.advisorMessages || []);
   const [advisorLoading, setAdvisorLoading] = useState(false);
@@ -115,7 +113,6 @@ function App() {
     try {
       const id = await createProfile(profile);
       setProfileId(id);
-      setIsNewProfile(true);
       try { localStorage.setItem(`kairo_profile_${id}`, JSON.stringify(profile)); } catch {}
       history.replaceState(null, "", "?p=" + id);
     } catch (err) {
@@ -350,7 +347,6 @@ function App() {
           actionItems={actionItems}
           onToggleActionItem={handleToggleActionItem}
           profileId={profileId}
-          isNewProfile={isNewProfile}
         />
       )}
     </div>
