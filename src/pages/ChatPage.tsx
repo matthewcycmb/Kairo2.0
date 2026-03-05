@@ -230,7 +230,7 @@ export default function ChatPage({
   const isLastActivity = currentActivityIdx === totalActivities - 1;
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4 py-6">
+    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-6">
       <div className="mb-4 text-center">
         <h1 className="text-xl font-bold text-white">Kairo</h1>
         <p className="text-sm text-white/40">Let's fill in the details</p>

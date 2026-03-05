@@ -308,7 +308,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen text-white">
+    <div className="min-h-dvh text-white">
       {currentView === "input" && (
         <BrainDumpPage
           onSubmit={handleBrainDumpSubmit}

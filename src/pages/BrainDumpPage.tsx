@@ -96,7 +96,7 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
   const canSubmit = text.trim().length >= 20 && !isLoading;
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-4 py-12">
+    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center px-4 py-12">
       <div className="mb-8 text-center">
         <h1 className="mb-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
           Kairo

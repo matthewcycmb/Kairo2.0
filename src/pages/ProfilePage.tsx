@@ -240,7 +240,7 @@ export default function ProfilePage({
   };
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-8">
+    <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-8">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
