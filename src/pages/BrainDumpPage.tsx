@@ -105,7 +105,7 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
           Dump your activities. See what you've actually done.
         </p>
         <p className="mt-1.5 text-xs text-white/35 sm:text-sm">
-          This becomes your organized student profile — include everything you've done in high school.
+          Turn your scattered ECs into an organized portfolio
         </p>
       </div>
 
