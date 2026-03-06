@@ -30,7 +30,9 @@ export interface ActionItem {
   id: string;
   action: string;
   gap: string;
-  completed: boolean;
+  status: 'pending' | 'completed';
+  createdAt: string;
+  completedAt?: string;
 }
 
 export interface AdvisorMessage {
@@ -103,6 +105,7 @@ export interface AdvisorRequest {
   profile: StudentProfile;
   messages: AdvisorMessage[];
   isFirstMessage: boolean;
+  pendingActions?: ActionItem[];
 }
 
 export interface AdvisorResponse {

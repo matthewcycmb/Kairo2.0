@@ -6,7 +6,7 @@ import BrainDumpPage from "./pages/BrainDumpPage";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import GoalSetupPage from "./pages/GoalSetupPage";
-import { createProfile, updateProfile, loadProfile } from "./lib/profileApi";
+import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, saveActionItems, loadActionItems, updateActionItem } from "./lib/profileApi";
 import { callApi } from "./lib/apiClient";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -70,7 +70,13 @@ function App() {
             setAdvisorMessages(loaded.advisorMessages);
           }
           if (loaded.actionItems?.length) {
-            setActionItems(loaded.actionItems);
+            // Migrate old format: completed:boolean → status:'pending'|'completed'
+            const migrated = loaded.actionItems.map((item) => ({
+              ...item,
+              status: ("status" in item ? item.status : ("completed" in item && (item as unknown as { completed: boolean }).completed) ? "completed" : "pending") as "pending" | "completed",
+              createdAt: item.createdAt || new Date().toISOString(),
+            }));
+            setActionItems(migrated);
           }
           setCurrentView("profile");
         } else {
@@ -164,21 +170,22 @@ function App() {
     currentItems: ActionItem[]
   ): ActionItem[] => {
     if (!items || items.length === 0) return currentItems;
-    const activeCount = currentItems.filter((i) => !i.completed).length;
-    const room = 3 - activeCount;
+    const activeCount = currentItems.filter((i) => i.status === "pending").length;
+    const room = 2 - activeCount;
     if (room <= 0) return currentItems;
-    const newItems = items.slice(0, room).map((item, i) => ({
-      id: `action_${Date.now()}_${i}`,
+    const newItems: ActionItem[] = items.slice(0, room).map((item, i) => ({
+      id: crypto.randomUUID(),
       action: item.action,
       gap: item.gap,
-      completed: false,
+      status: "pending" as const,
+      createdAt: new Date().toISOString(),
     }));
     return [...currentItems, ...newItems];
   };
 
   const handleAdvisorMessage = async (userText: string) => {
     const userMsg: AdvisorMessage = {
-      id: `msg_${Date.now()}_user`,
+      id: crypto.randomUUID(),
       role: "user",
       content: userText,
       timestamp: new Date().toISOString(),
@@ -189,15 +196,42 @@ function App() {
     setAdvisorLoading(true);
 
     try {
+      // Check if user is responding to an action item follow-up
+      const lowerText = userText.toLowerCase();
+      const isCompletionResponse = lowerText.includes("yes i did it") || lowerText.includes("i completed");
+      const isNotYetResponse = lowerText.includes("not yet") || lowerText.includes("life got busy");
+
+      const pendingActions = actionItems.filter((i) => i.status === "pending");
+
+      // If "Yes I did it" → mark most recent pending action as completed
+      let updatedItems = [...actionItems];
+      if (isCompletionResponse && pendingActions.length > 0) {
+        const completedItem = pendingActions[pendingActions.length - 1];
+        updatedItems = updatedItems.map((item) =>
+          item.id === completedItem.id
+            ? { ...item, status: "completed" as const, completedAt: new Date().toISOString() }
+            : item
+        );
+        setActionItems(updatedItems);
+
+        // Persist completion to Supabase
+        if (profileId) {
+          updateActionItem(profileId, completedItem.id, { status: "completed" }).catch(console.error);
+        }
+      }
+
+      const currentPending = updatedItems.filter((i) => i.status === "pending");
+
       const response = await callApi({
         type: "advisor",
         profile,
         messages: updatedMessages,
         isFirstMessage: false,
+        pendingActions: currentPending,
       });
 
       const assistantMsg: AdvisorMessage = {
-        id: `msg_${Date.now()}_assistant`,
+        id: crypto.randomUUID(),
         role: "assistant",
         content: response.message,
         timestamp: new Date().toISOString(),
@@ -207,20 +241,29 @@ function App() {
       const allMessages = [...updatedMessages, assistantMsg];
       setAdvisorMessages(allMessages);
 
-      // Add action items if room
-      const updatedItems = addNewActionItems(response.actionItems, actionItems);
-      setActionItems(updatedItems);
+      // Add new action items if the AI suggested any and there's room
+      const finalItems = addNewActionItems(response.actionItems, updatedItems);
+      setActionItems(finalItems);
 
-      // Persist to profile
+      // Persist to Supabase
+      if (profileId) {
+        saveAdvisorMessages(profileId, [userMsg, assistantMsg]).catch(console.error);
+        const newItems = finalItems.filter((item) => !updatedItems.some((old) => old.id === item.id));
+        if (newItems.length > 0) {
+          saveActionItems(profileId, newItems).catch(console.error);
+        }
+      }
+
+      // Also persist to profile blob
       setProfile((prev) => {
-        const next = { ...prev, advisorMessages: allMessages, actionItems: updatedItems, lastUpdated: new Date() };
+        const next = { ...prev, advisorMessages: allMessages, actionItems: finalItems, lastUpdated: new Date() };
         if (profileId) debouncedSave(profileId, next);
         return next;
       });
     } catch (err) {
       console.error("Advisor error:", err);
       const errorMsg: AdvisorMessage = {
-        id: `msg_${Date.now()}_error`,
+        id: crypto.randomUUID(),
         role: "assistant",
         content: "Sorry, I had trouble responding. Try again in a moment.",
         timestamp: new Date().toISOString(),
@@ -232,13 +275,93 @@ function App() {
   };
 
   const handleAdvisorTabOpened = async () => {
-    // Only auto-trigger first message once
-    if (advisorMessages.length > 0 || advisorInitRef.current) return;
+    if (advisorInitRef.current) return;
     advisorInitRef.current = true;
 
     setAdvisorLoading(true);
 
     try {
+      // Step 1: Try loading from Supabase if we have a profileId
+      let loadedMessages: AdvisorMessage[] = [];
+      let loadedItems: ActionItem[] = [];
+
+      if (profileId) {
+        try {
+          const [msgs, items] = await Promise.all([
+            loadAdvisorMessages(profileId),
+            loadActionItems(profileId),
+          ]);
+          loadedMessages = msgs;
+          loadedItems = items;
+        } catch (err) {
+          console.error("Failed to load from Supabase:", err);
+        }
+      }
+
+      // Migrate old-format action items from profile blob (backward compat)
+      if (loadedItems.length === 0 && actionItems.length > 0) {
+        loadedItems = actionItems.map((item) => ({
+          ...item,
+          status: ("status" in item ? item.status : ("completed" in item && (item as unknown as { completed: boolean }).completed) ? "completed" : "pending") as "pending" | "completed",
+          createdAt: item.createdAt || new Date().toISOString(),
+        }));
+      }
+
+      // Step 2: If messages exist (return visit) → follow-up flow
+      if (loadedMessages.length > 0) {
+        setAdvisorMessages(loadedMessages);
+        setActionItems(loadedItems);
+
+        const pendingActions = loadedItems.filter((i) => i.status === "pending");
+
+        if (pendingActions.length > 0) {
+          const lastMessageAt = loadedMessages[loadedMessages.length - 1]?.timestamp;
+          const daysSinceLastMessage = lastMessageAt
+            ? (Date.now() - new Date(lastMessageAt).getTime()) / (1000 * 60 * 60 * 24)
+            : 0;
+
+          // Build follow-up message via AI
+          const followUpContent = daysSinceLastMessage >= 14
+            ? `The student is returning after ${Math.floor(daysSinceLastMessage)} days. They have ${pendingActions.length} pending action item(s). Do a check-in: list each pending action and ask which ones they've made progress on. Use suggestion buttons for quick responses.`
+            : `The student is returning. Their most recent pending action is: "${pendingActions[pendingActions.length - 1].action}" (addresses: ${pendingActions[pendingActions.length - 1].gap}). Ask if they've done it yet. Keep it short and friendly.`;
+
+          const followUpUserMsg: AdvisorMessage = {
+            id: `msg_${Date.now()}_system`,
+            role: "user",
+            content: followUpContent,
+            timestamp: new Date().toISOString(),
+          };
+
+          const response = await callApi({
+            type: "advisor",
+            profile,
+            messages: [...loadedMessages, followUpUserMsg],
+            isFirstMessage: false,
+            pendingActions,
+          });
+
+          const welcomeBackMsg: AdvisorMessage = {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: response.message,
+            timestamp: new Date().toISOString(),
+            suggestions: daysSinceLastMessage >= 14
+              ? ["I completed some!", "Not yet, life got busy"]
+              : ["Yes I did it", "Not yet"],
+          };
+
+          const allMessages = [...loadedMessages, welcomeBackMsg];
+          setAdvisorMessages(allMessages);
+
+          if (profileId) {
+            saveAdvisorMessages(profileId, [welcomeBackMsg]).catch(console.error);
+          }
+        }
+        // If no pending actions, just show existing messages (no follow-up needed)
+        return;
+      }
+
+      // Step 3: No messages (first visit) → fresh analysis
       const response = await callApi({
         type: "advisor",
         profile,
@@ -247,7 +370,7 @@ function App() {
       });
 
       const firstMsg: AdvisorMessage = {
-        id: `msg_${Date.now()}_assistant`,
+        id: crypto.randomUUID(),
         role: "assistant",
         content: response.message,
         timestamp: new Date().toISOString(),
@@ -257,11 +380,18 @@ function App() {
 
       setAdvisorMessages([firstMsg]);
 
-      // Add initial action items
-      const updatedItems = addNewActionItems(response.actionItems, actionItems);
+      const updatedItems = addNewActionItems(response.actionItems, loadedItems);
       setActionItems(updatedItems);
 
-      // Persist to profile
+      // Persist to Supabase
+      if (profileId) {
+        saveAdvisorMessages(profileId, [firstMsg]).catch(console.error);
+        if (updatedItems.length > 0) {
+          saveActionItems(profileId, updatedItems).catch(console.error);
+        }
+      }
+
+      // Also persist to profile blob
       setProfile((prev) => {
         const next = { ...prev, advisorMessages: [firstMsg], actionItems: updatedItems, lastUpdated: new Date() };
         if (profileId) debouncedSave(profileId, next);
@@ -277,10 +407,21 @@ function App() {
 
   const handleToggleActionItem = (itemId: string) => {
     setActionItems((prev) => {
-      const updated = prev.map((item) =>
-        item.id === itemId ? { ...item, completed: !item.completed } : item
-      );
-      // Persist
+      const updated = prev.map((item) => {
+        if (item.id !== itemId) return item;
+        const newStatus = item.status === "pending" ? "completed" as const : "pending" as const;
+        return {
+          ...item,
+          status: newStatus,
+          completedAt: newStatus === "completed" ? new Date().toISOString() : undefined,
+        };
+      });
+      // Persist to Supabase
+      const toggled = updated.find((i) => i.id === itemId);
+      if (profileId && toggled) {
+        updateActionItem(profileId, itemId, { status: toggled.status }).catch(console.error);
+      }
+      // Persist to profile blob
       setProfile((p) => {
         const next = { ...p, actionItems: updated, lastUpdated: new Date() };
         if (profileId) debouncedSave(profileId, next);

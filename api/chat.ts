@@ -201,7 +201,14 @@ interface AdvisorMsg {
   content: string;
 }
 
-function buildAdvisorSystemPrompt(profile: AdvisorProfile): string {
+interface PendingAction {
+  id: string;
+  action: string;
+  gap: string;
+  createdAt: string;
+}
+
+function buildAdvisorSystemPrompt(profile: AdvisorProfile, pendingActions?: PendingAction[]): string {
   const activitiesSummary = profile.activities
     .map((a) => {
       const parts = [`• ${a.name} (${a.category})`];
@@ -246,12 +253,20 @@ Rules:
 - Keep responses concise and conversational — no bullet-point walls, no numbered lists unless asked
 - For follow-up messages, respond in plain conversational text
 - For the first analysis, respond in JSON as instructed
-- If the student asks something outside your scope, gently redirect to extracurricular/university planning`;
+- If the student asks something outside your scope, gently redirect to extracurricular/university planning
+${pendingActions?.length ? `
+PENDING ACTION ITEMS (the student currently has these outstanding):
+${pendingActions.map((a, i) => `${i + 1}. "${a.action}" (addresses: ${a.gap}, assigned: ${a.createdAt})`).join("\n")}
+
+When the student says they completed an action: celebrate genuinely (be specific about what they did), then give them their next action step if they have fewer than 2 pending items.
+When the student says they haven't done an action yet: be empathetic, ask what got in the way, and offer to either simplify the action or draft something for them (like an email or talking points).
+` : ""}`;
 }
 
 function buildAdvisorUserPrompt(
   messages: AdvisorMsg[],
-  isFirstMessage: boolean
+  isFirstMessage: boolean,
+  pendingActions?: PendingAction[]
 ): string {
   if (isFirstMessage) {
     return `This is your first analysis of the student's profile. Respond with a JSON object in this exact format:
@@ -288,7 +303,11 @@ Rules:
     .map((m) => `${m.role === "user" ? "Student" : "Advisor"}: ${m.content}`)
     .join("\n\n");
 
-  return `Conversation so far:\n\n${history}\n\nRespond to the student's latest message. Be specific and reference their profile.
+  const actionContext = pendingActions?.length
+    ? `\n\nThe student currently has these pending action items:\n${pendingActions.map((a) => `- "${a.action}" (gap: ${a.gap})`).join("\n")}\n\nIf the student's message relates to completing or not completing an action item, handle it appropriately (celebrate completions, be empathetic about incomplete items and offer to simplify or draft something).`
+    : "";
+
+  return `Conversation so far:\n\n${history}${actionContext}\n\nRespond to the student's latest message. Be specific and reference their profile.
 
 Respond with a JSON object in this exact format:
 {
@@ -386,13 +405,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (body.messages && (!Array.isArray(body.messages) || body.messages.length > MAX_MESSAGES)) {
         return res.status(400).json({ error: "Too many messages" });
       }
+      if (body.pendingActions && !Array.isArray(body.pendingActions)) {
+        return res.status(400).json({ error: "Invalid pending actions" });
+      }
     } else {
       return res.status(400).json({ error: "Invalid request type" });
     }
 
     if (body.type === "advisor") {
-      const advisorSystem = buildAdvisorSystemPrompt(body.profile);
-      const advisorUser = buildAdvisorUserPrompt(body.messages || [], body.isFirstMessage);
+      const advisorSystem = buildAdvisorSystemPrompt(body.profile, body.pendingActions);
+      const advisorUser = buildAdvisorUserPrompt(body.messages || [], body.isFirstMessage, body.pendingActions);
 
       const advisorMessage = await anthropic.messages.create({
         model: "claude-sonnet-4-5-20250929",

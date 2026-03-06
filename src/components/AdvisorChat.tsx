@@ -51,7 +51,7 @@ export default function AdvisorChat({
     ? lastAssistantMsg.suggestions
     : [];
 
-  const activeItems = actionItems.filter((i) => !i.completed);
+  const activeItems = actionItems.filter((i) => i.status === "pending");
 
   return (
     <div className="flex h-full flex-col">
@@ -63,7 +63,7 @@ export default function AdvisorChat({
               Your Action Items
             </span>
             <span className="text-sm text-white/30">
-              {activeItems.length}/3
+              {activeItems.length}/2
             </span>
           </div>
           <div className="space-y-2.5">
@@ -74,7 +74,7 @@ export default function AdvisorChat({
               >
                 <input
                   type="checkbox"
-                  checked={item.completed}
+                  checked={item.status === "completed"}
                   onChange={() => onToggleActionItem(item.id)}
                   className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer appearance-none rounded border border-white/20 bg-white/[0.05] checked:border-blue-400 checked:bg-blue-400"
                 />

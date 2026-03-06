@@ -1,4 +1,4 @@
-import type { StudentProfile } from "../types/profile";
+import type { StudentProfile, AdvisorMessage, ActionItem } from "../types/profile";
 
 const TIMEOUT_MS = 15_000; // 15 seconds for DB operations
 
@@ -64,4 +64,58 @@ export async function lookupIdentifier(identifier: string): Promise<string | nul
   if (!res.ok) throw new Error("Failed to look up identifier");
   const data = await res.json();
   return data.profileId;
+}
+
+export async function saveAdvisorMessages(profileId: string, messages: AdvisorMessage[]): Promise<void> {
+  const res = await fetchWithTimeout("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "save-advisor-messages", profileId, messages }),
+  });
+
+  if (!res.ok) throw new Error("Failed to save advisor messages");
+}
+
+export async function loadAdvisorMessages(profileId: string): Promise<AdvisorMessage[]> {
+  const res = await fetchWithTimeout("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "load-advisor-messages", profileId }),
+  });
+
+  if (!res.ok) throw new Error("Failed to load advisor messages");
+  const data = await res.json();
+  return data.messages;
+}
+
+export async function saveActionItems(profileId: string, items: ActionItem[]): Promise<void> {
+  const res = await fetchWithTimeout("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "save-action-items", profileId, items }),
+  });
+
+  if (!res.ok) throw new Error("Failed to save action items");
+}
+
+export async function loadActionItems(profileId: string): Promise<ActionItem[]> {
+  const res = await fetchWithTimeout("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "load-action-items", profileId }),
+  });
+
+  if (!res.ok) throw new Error("Failed to load action items");
+  const data = await res.json();
+  return data.items;
+}
+
+export async function updateActionItem(profileId: string, itemId: string, updates: { status?: string }): Promise<void> {
+  const res = await fetchWithTimeout("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "update-action-item", profileId, itemId, updates }),
+  });
+
+  if (!res.ok) throw new Error("Failed to update action item");
 }

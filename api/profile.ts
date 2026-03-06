@@ -180,6 +180,156 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ profileId: data.profile_id });
     }
 
+    if (type === "save-advisor-messages") {
+      const { profileId, messages } = body;
+      if (!isValidUUID(profileId)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ error: "Messages are required" });
+      }
+
+      const rows = messages.map((m: { id: string; role: string; content: string; analysis?: unknown; suggestions?: unknown; timestamp: string }) => ({
+        id: m.id,
+        profile_id: profileId,
+        role: m.role,
+        content: m.content,
+        analysis: m.analysis || null,
+        suggestions: m.suggestions || null,
+        created_at: m.timestamp || new Date().toISOString(),
+      }));
+
+      const { error } = await supabase
+        .from("advisor_messages")
+        .upsert(rows, { onConflict: "id" });
+
+      if (error) {
+        console.error("Supabase save messages error:", error);
+        return res.status(500).json({ error: "Failed to save messages" });
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
+    if (type === "load-advisor-messages") {
+      const { profileId } = body;
+      if (!isValidUUID(profileId)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+
+      const { data, error } = await supabase
+        .from("advisor_messages")
+        .select("*")
+        .eq("profile_id", profileId)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Supabase load messages error:", error);
+        return res.status(500).json({ error: "Failed to load messages" });
+      }
+
+      const messages = (data || []).map((row) => ({
+        id: row.id,
+        role: row.role,
+        content: row.content,
+        timestamp: row.created_at,
+        analysis: row.analysis || undefined,
+        suggestions: row.suggestions || undefined,
+      }));
+
+      return res.status(200).json({ messages });
+    }
+
+    if (type === "save-action-items") {
+      const { profileId, items } = body;
+      if (!isValidUUID(profileId)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Items are required" });
+      }
+
+      const rows = items.map((item: { id: string; action: string; gap: string; status: string; createdAt: string; completedAt?: string }) => ({
+        id: item.id,
+        profile_id: profileId,
+        action: item.action,
+        gap: item.gap,
+        status: item.status,
+        created_at: item.createdAt || new Date().toISOString(),
+        completed_at: item.completedAt || null,
+      }));
+
+      const { error } = await supabase
+        .from("advisor_action_items")
+        .upsert(rows, { onConflict: "id" });
+
+      if (error) {
+        console.error("Supabase save action items error:", error);
+        return res.status(500).json({ error: "Failed to save action items" });
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
+    if (type === "load-action-items") {
+      const { profileId } = body;
+      if (!isValidUUID(profileId)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+
+      // Load pending + recently completed (last 30 days)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("advisor_action_items")
+        .select("*")
+        .eq("profile_id", profileId)
+        .or(`status.eq.pending,completed_at.gte.${thirtyDaysAgo}`)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Supabase load action items error:", error);
+        return res.status(500).json({ error: "Failed to load action items" });
+      }
+
+      const items = (data || []).map((row) => ({
+        id: row.id,
+        action: row.action,
+        gap: row.gap,
+        status: row.status,
+        createdAt: row.created_at,
+        completedAt: row.completed_at || undefined,
+      }));
+
+      return res.status(200).json({ items });
+    }
+
+    if (type === "update-action-item") {
+      const { profileId, itemId, updates } = body;
+      if (!isValidUUID(profileId)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      if (!isValidUUID(itemId)) {
+        return res.status(400).json({ error: "Invalid item ID" });
+      }
+
+      const updateData: Record<string, unknown> = {};
+      if (updates.status) updateData.status = updates.status;
+      if (updates.status === "completed") updateData.completed_at = new Date().toISOString();
+
+      const { error } = await supabase
+        .from("advisor_action_items")
+        .update(updateData)
+        .eq("id", itemId)
+        .eq("profile_id", profileId);
+
+      if (error) {
+        console.error("Supabase update action item error:", error);
+        return res.status(500).json({ error: "Failed to update action item" });
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
     return res.status(400).json({ error: "Invalid request type" });
   } catch (error) {
     console.error("Profile API error:", error);
