@@ -241,8 +241,11 @@ function App() {
       const allMessages = [...updatedMessages, assistantMsg];
       setAdvisorMessages(allMessages);
 
-      // Add new action items if the AI suggested any and there's room
-      const finalItems = addNewActionItems(response.actionItems, updatedItems);
+      // Only add new action items if all pending items are resolved
+      const stillPending = updatedItems.filter((i) => i.status === "pending");
+      const finalItems = stillPending.length === 0
+        ? addNewActionItems(response.actionItems, updatedItems)
+        : updatedItems;
       setActionItems(finalItems);
 
       // Persist to Supabase
@@ -281,7 +284,7 @@ function App() {
     setAdvisorLoading(true);
 
     try {
-      // Step 1: Try loading from Supabase if we have a profileId
+      // Step 1: Load from Supabase
       let loadedMessages: AdvisorMessage[] = [];
       let loadedItems: ActionItem[] = [];
 
@@ -298,7 +301,7 @@ function App() {
         }
       }
 
-      // Migrate old-format action items from profile blob (backward compat)
+      // Fallback: migrate old-format action items from profile blob
       if (loadedItems.length === 0 && actionItems.length > 0) {
         loadedItems = actionItems.map((item) => ({
           ...item,
@@ -307,61 +310,64 @@ function App() {
         }));
       }
 
-      // Step 2: If messages exist (return visit) → follow-up flow
-      if (loadedMessages.length > 0) {
-        setAdvisorMessages(loadedMessages);
+      // Step 2: Check for pending action items — this is the FIRST check
+      const pendingActions = loadedItems.filter((i) => i.status === "pending");
+
+      if (pendingActions.length > 0) {
+        // Return visit with pending items → follow-up, NOT fresh analysis
+        if (loadedMessages.length > 0) {
+          setAdvisorMessages(loadedMessages);
+        }
         setActionItems(loadedItems);
 
-        const pendingActions = loadedItems.filter((i) => i.status === "pending");
+        const mostRecentAction = pendingActions[pendingActions.length - 1];
 
-        if (pendingActions.length > 0) {
-          const lastMessageAt = loadedMessages[loadedMessages.length - 1]?.timestamp;
-          const daysSinceLastMessage = lastMessageAt
-            ? (Date.now() - new Date(lastMessageAt).getTime()) / (1000 * 60 * 60 * 24)
-            : 0;
+        const followUpContent = pendingActions.length > 1
+          ? `The student is returning. They have ${pendingActions.length} pending action items:\n${pendingActions.map((a) => `- "${a.action}"`).join("\n")}\nAsk which ones they've made progress on. Keep it short and friendly — 2-3 sentences max.`
+          : `The student is returning. Their pending action is: "${mostRecentAction.action}" (addresses: ${mostRecentAction.gap}). Ask if they've done it yet. Keep it short and friendly — 2-3 sentences max.`;
 
-          // Build follow-up message via AI
-          const followUpContent = daysSinceLastMessage >= 14
-            ? `The student is returning after ${Math.floor(daysSinceLastMessage)} days. They have ${pendingActions.length} pending action item(s). Do a check-in: list each pending action and ask which ones they've made progress on. Use suggestion buttons for quick responses.`
-            : `The student is returning. Their most recent pending action is: "${pendingActions[pendingActions.length - 1].action}" (addresses: ${pendingActions[pendingActions.length - 1].gap}). Ask if they've done it yet. Keep it short and friendly.`;
+        const followUpUserMsg: AdvisorMessage = {
+          id: `msg_${Date.now()}_system`,
+          role: "user",
+          content: followUpContent,
+          timestamp: new Date().toISOString(),
+        };
 
-          const followUpUserMsg: AdvisorMessage = {
-            id: `msg_${Date.now()}_system`,
-            role: "user",
-            content: followUpContent,
-            timestamp: new Date().toISOString(),
-          };
+        const response = await callApi({
+          type: "advisor",
+          profile,
+          messages: [...(loadedMessages.length > 0 ? loadedMessages.slice(-10) : []), followUpUserMsg],
+          isFirstMessage: false,
+          pendingActions,
+        });
 
-          const response = await callApi({
-            type: "advisor",
-            profile,
-            messages: [...loadedMessages, followUpUserMsg],
-            isFirstMessage: false,
-            pendingActions,
-          });
+        const welcomeBackMsg: AdvisorMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: response.message,
+          timestamp: new Date().toISOString(),
+          suggestions: ["Yes I did it", "Not yet"],
+        };
 
-          const welcomeBackMsg: AdvisorMessage = {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: response.message,
-            timestamp: new Date().toISOString(),
-            suggestions: daysSinceLastMessage >= 14
-              ? ["I completed some!", "Not yet, life got busy"]
-              : ["Yes I did it", "Not yet"],
-          };
+        const allMessages = loadedMessages.length > 0
+          ? [...loadedMessages, welcomeBackMsg]
+          : [welcomeBackMsg];
+        setAdvisorMessages(allMessages);
 
-          const allMessages = [...loadedMessages, welcomeBackMsg];
-          setAdvisorMessages(allMessages);
-
-          if (profileId) {
-            saveAdvisorMessages(profileId, [welcomeBackMsg]).catch(console.error);
-          }
+        if (profileId) {
+          saveAdvisorMessages(profileId, [welcomeBackMsg]).catch(console.error);
         }
-        // If no pending actions, just show existing messages (no follow-up needed)
         return;
       }
 
-      // Step 3: No messages (first visit) → fresh analysis
+      // Step 3: If messages exist but no pending items → show existing messages
+      if (loadedMessages.length > 0) {
+        setAdvisorMessages(loadedMessages);
+        setActionItems(loadedItems);
+        return;
+      }
+
+      // Step 4: No messages AND no pending items → fresh analysis
       const response = await callApi({
         type: "advisor",
         profile,
