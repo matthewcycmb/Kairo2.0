@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { AdvisorMessage, ActionItem } from "../types/profile";
+import ReactMarkdown from "react-markdown";
 import ChatBubble from "./ChatBubble";
 import LoadingSpinner from "./LoadingSpinner";
 import AdvisorAnalysisCard from "./AdvisorAnalysisCard";
@@ -105,7 +106,9 @@ export default function AdvisorChat({
             <AdvisorAnalysisCard key={msg.id} analysis={msg.analysis} />
           ) : (
             <ChatBubble key={msg.id} type={msg.role === "user" ? "user" : "ai"}>
-              <div className="whitespace-pre-wrap text-base leading-relaxed">{msg.content}</div>
+              <div className="prose-invert text-base leading-relaxed [&>p]:mb-3 [&>p:last-child]:mb-0 [&>ol]:mb-3 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:space-y-2 [&>ul]:mb-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:space-y-2 [&_strong]:font-semibold [&_strong]:text-white">
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              </div>
             </ChatBubble>
           )
         )}
