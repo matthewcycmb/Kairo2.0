@@ -77,7 +77,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
 
   return (
     <div
-      className={`rounded-xl border p-4 transition-all backdrop-blur-[40px] hover:bg-white/[0.10] ${
+      className={`rounded-xl border p-4 transition-all backdrop-blur-[40px] hover:bg-white/[0.10] sm:p-6 ${
         isRich
           ? "border-white/[0.15] bg-white/[0.08]"
           : isShallow
@@ -90,12 +90,12 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
           <EditableField
             value={activity.name}
             onSave={(name) => onEdit(activity.id, { name })}
-            className={`font-semibold ${isRich ? "text-lg text-white" : "text-base text-white/90"}`}
+            className="text-lg font-bold text-white"
             as="h3"
           />
         </div>
         {activity.role && (
-          <span className="shrink-0 rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs font-medium text-blue-300">
+          <span className="shrink-0 rounded-full bg-blue-500/20 px-3 py-1 text-sm font-medium text-blue-300">
             {activity.role}
           </span>
         )}
@@ -104,31 +104,31 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       <EditableField
         value={activity.description}
         onSave={(description) => onEdit(activity.id, { description })}
-        className="text-sm text-white/70"
+        className="text-base leading-relaxed text-white/70"
         as="p"
       />
 
       {activity.details.length > 0 && (
-        <ul className="mt-2 space-y-1">
+        <ul className="mt-2 space-y-1.5">
           {activity.details.map((detail, i) => (
-            <li key={i} className="text-sm text-white/60 before:mr-1.5 before:content-['•']">
+            <li key={i} className="text-base leading-relaxed text-white/60 before:mr-1.5 before:content-['•']">
               {detail}
             </li>
           ))}
         </ul>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/40">
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/40">
         {activity.yearsActive && <span>{activity.yearsActive}</span>}
         {activity.hoursPerWeek && <span>{activity.hoursPerWeek} hrs/week</span>}
       </div>
 
       {activity.achievements && activity.achievements.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2.5 flex flex-wrap gap-2">
           {activity.achievements.map((achievement, i) => (
             <span
               key={i}
-              className="rounded-full bg-yellow-500/15 px-2.5 py-0.5 text-xs font-medium text-yellow-300"
+              className="rounded-full bg-yellow-500/15 px-3 py-1 text-sm font-medium text-yellow-300"
             >
               {achievement}
             </span>
@@ -137,11 +137,11 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       )}
 
       {activity.skills && activity.skills.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2.5 flex flex-wrap gap-2">
           {activity.skills.map((skill, i) => (
             <span
               key={i}
-              className="rounded-full border border-white/[0.10] bg-white/[0.08] px-2.5 py-0.5 text-xs text-white/70"
+              className="rounded-full border border-white/[0.10] bg-white/[0.08] px-3 py-1 text-sm text-white/70"
             >
               {skill}
             </span>
@@ -150,7 +150,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       )}
 
       {isShallow && !expanding && !loading && (
-        <p className="mt-3 text-xs text-white/40 italic">
+        <p className="mt-3 text-sm text-white/40 italic">
           This could be stronger — add more detail
         </p>
       )}
@@ -162,13 +162,13 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
         <div className="mt-4 space-y-3 border-t border-white/10 pt-3">
           {expandQuestions.map((q, i) => (
             <div key={i}>
-              <p className="mb-1 text-sm text-white/80">{q}</p>
+              <p className="mb-1 text-base text-white/80">{q}</p>
               <input
                 type="text"
                 value={expandAnswers[i] || ""}
                 onChange={(e) => setExpandAnswers((prev) => ({ ...prev, [i]: e.target.value }))}
                 placeholder="Your answer..."
-                className="w-full rounded-lg border border-white/[0.15] bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
+                className="w-full rounded-lg border border-white/[0.15] bg-white/[0.05] px-4 py-2.5 text-base text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
               />
             </div>
           ))}
@@ -176,13 +176,13 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
             <button
               onClick={handleSubmitExpand}
               disabled={!allExpandAnswered}
-              className="rounded-lg border border-white/[0.12] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:opacity-40"
+              className="rounded-lg border border-white/[0.12] bg-white/[0.10] px-4 py-2.5 text-base font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:opacity-40"
             >
               Save
             </button>
             <button
               onClick={() => { setExpanding(false); setExpandAnswers({}); }}
-              className="px-4 py-2 text-sm text-white/50 hover:text-white/70"
+              className="px-4 py-2.5 text-base text-white/50 hover:text-white/70"
             >
               Cancel
             </button>
@@ -195,8 +195,8 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
           onClick={handleExpand}
           className={
             isShallow
-              ? "mt-3 w-full rounded-lg border border-white/[0.12] bg-white/[0.06] py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.12]"
-              : "mt-3 inline-flex items-center gap-1 rounded-full border border-white/[0.10] bg-white/[0.06] px-3 py-1 text-xs text-white/60 transition-colors hover:bg-white/[0.12] hover:text-white/80"
+              ? "mt-3 w-full rounded-lg border border-white/[0.12] bg-white/[0.06] py-2.5 text-base font-medium text-white/80 transition-colors hover:bg-white/[0.12]"
+              : "mt-3 inline-flex items-center gap-1 rounded-full border border-white/[0.10] bg-white/[0.06] px-4 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/[0.12] hover:text-white/80"
           }
         >
           {isShallow ? "Add more detail +" : isRich ? <>Expand this <span aria-hidden>→</span></> : <>Add more detail <span aria-hidden>→</span></>}
