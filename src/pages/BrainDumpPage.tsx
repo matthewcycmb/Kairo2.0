@@ -98,10 +98,10 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center px-4 py-12">
       <div className="mb-8 text-center">
-        <h1 className="mb-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <h1 className="mb-1 text-3xl font-bold tracking-tight text-white sm:mb-2 sm:text-4xl">
           Kairo
         </h1>
-        <p className="text-sm text-white/60 sm:text-lg">
+        <p className="text-xs tracking-wide text-white/50 sm:text-base sm:text-white/60">
           Turn your scattered EC's into an organized portfolio
         </p>
       </div>
