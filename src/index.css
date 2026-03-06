@@ -31,6 +31,51 @@ body::before {
   }
 }
 
+/* Advisor markdown formatting */
+.advisor-markdown p {
+  margin-bottom: 12px;
+}
+
+.advisor-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.advisor-markdown strong {
+  font-weight: 600;
+  color: white;
+}
+
+.advisor-markdown ol,
+.advisor-markdown ul {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.advisor-markdown ol {
+  list-style-type: decimal;
+}
+
+.advisor-markdown ul {
+  list-style-type: disc;
+}
+
+.advisor-markdown li {
+  padding-left: 4px;
+}
+
+.advisor-markdown li p {
+  margin-bottom: 0;
+}
+
+.advisor-markdown ol:last-child,
+.advisor-markdown ul:last-child {
+  margin-bottom: 0;
+}
+
 /* Custom checkbox checkmark */
 input[type="checkbox"].appearance-none:checked::after {
   content: '\2713';
