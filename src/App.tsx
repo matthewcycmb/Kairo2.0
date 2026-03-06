@@ -8,6 +8,7 @@ import ProfilePage from "./pages/ProfilePage";
 import GoalSetupPage from "./pages/GoalSetupPage";
 import { createProfile, updateProfile, loadProfile } from "./lib/profileApi";
 import { callApi } from "./lib/apiClient";
+import { Analytics } from "@vercel/analytics/react";
 
 const initialProfileId = new URLSearchParams(window.location.search).get("p");
 
@@ -349,6 +350,7 @@ function App() {
           profileId={profileId}
         />
       )}
+      <Analytics />
     </div>
   );
 }
