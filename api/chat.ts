@@ -317,13 +317,14 @@ Rules:
 
 Respond with a JSON object in this exact format:
 {
-  "message": "Your conversational response to the student. Be specific, reference their activities by name.",
+  "message": "Your response with markdown formatting. Use \\n\\n between paragraphs. Use **bold** for emphasis. Use numbered lists (1. 2. 3.) on separate lines when listing multiple points.",
   "suggestions": ["A follow-up question the student might ask next", "Another contextual suggestion"],
   "actionItems": [{"action": "A specific action step if your response includes one", "gap": "Which gap or area this addresses"}]
 }
 
 Rules:
 - "message" is your conversational response — keep it concise and natural
+- CRITICAL FORMATTING: The "message" field MUST use \\n\\n to separate paragraphs and ideas. Never write a wall of text. Break your response into 2-4 short paragraphs. Use **bold** for key terms. If listing multiple points, use a numbered list with each item on its own line (1. First\\n2. Second\\n3. Third).
 - "suggestions" should be 2-3 contextual follow-up questions the student might want to ask, based on what you just discussed
 - "actionItems" should only be included if your response gives a specific, actionable recommendation. Omit or use an empty array if you're just answering a question without recommending an action. Each item needs an "action" (what to do) and "gap" (which area it strengthens).
 - Return ONLY valid JSON, no extra text`;
