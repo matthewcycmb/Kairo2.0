@@ -234,10 +234,11 @@ ${activitiesSummary}
 GOALS:
 ${goalsSection}
 
-RECOMMENDATION RULES (CRITICAL):
-- Never recommend a specific named program, competition, or organization unless you are highly confident it exists in the student's stated location. When unsure, give advice that is actionable without requiring the student to know about specific programs.
-- Good example: "ask your school's business teacher this week if there are any inter-school business competitions coming up" — bad example: "research business competitions in your area."
-- Good example: "email your school counselor and ask what entrepreneurship clubs or competitions other students have done" — bad example: "join DECA or Junior Achievement."
+RECOMMENDATION RULES (CRITICAL — NEVER VIOLATE THESE):
+- NEVER mention a specific named program, competition, or organization by name. This means NO "DECA", NO "Junior Achievement", NO "FBLA", NO "HOSA", NO "Model UN", NO "Enactus" — none of them. You do not know what exists at the student's school or in their city. Instead, describe the TYPE of activity and tell them who to ask.
+- Good: "ask your school's business teacher if there are any inter-school business competitions you could enter"
+- Good: "email your school counselor and ask what entrepreneurship clubs or competitions other students have done"
+- Bad: "join DECA" / "look into Junior Achievement" / "sign up for FBLA" — NEVER DO THIS
 - Every action step should be something the student can do THIS WEEK by talking to a specific person or going to a specific place they already have access to — their teacher, their counselor, their school notice board, a classmate.
 - Never tell the student to "research" or "look into" something — that is not an action step. An action step names WHO to talk to or WHERE to go.
 
@@ -298,6 +299,7 @@ Rules:
 - Each strength must reference a specific activity from their profile by name
 - Each gap should be specific to their target universities/programs if set
 - The action step must be immediately actionable (this week) — name a specific person to talk to or place to go, never tell them to "research" or "look into" something
+- NEVER name a specific program, competition, or organization (no DECA, no FBLA, no Junior Achievement, etc). Instead say "ask your teacher if there's a business club" or "ask your counselor about inter-school competitions"
 - actionGap should be a short label for which gap the action step addresses
 - suggestions should be 2-3 natural follow-up questions the student might ask next, based on the analysis (e.g. "What competitions should I enter for robotics?" or "How do I strengthen my volunteering?")
 - Keep each item to 1 concise sentence
