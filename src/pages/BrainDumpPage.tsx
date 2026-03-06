@@ -101,8 +101,8 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
         <h1 className="mb-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
           Kairo
         </h1>
-        <p className="text-base text-white/60 sm:text-lg">
-          Turn your scattered EC's into<br className="sm:hidden" /> an organized portfolio
+        <p className="text-sm text-white/60 sm:text-lg">
+          Turn your scattered EC's into an organized portfolio
         </p>
       </div>
 
