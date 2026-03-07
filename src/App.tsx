@@ -173,7 +173,7 @@ function App() {
     const activeCount = currentItems.filter((i) => i.status === "pending").length;
     const room = 2 - activeCount;
     if (room <= 0) return currentItems;
-    const newItems: ActionItem[] = items.slice(0, room).map((item, i) => ({
+    const newItems: ActionItem[] = items.slice(0, room).map((item) => ({
       id: crypto.randomUUID(),
       action: item.action,
       gap: item.gap,
@@ -199,7 +199,6 @@ function App() {
       // Check if user is responding to an action item follow-up
       const lowerText = userText.toLowerCase();
       const isCompletionResponse = lowerText.includes("yes i did it") || lowerText.includes("i completed");
-      const isNotYetResponse = lowerText.includes("not yet") || lowerText.includes("life got busy");
 
       const pendingActions = actionItems.filter((i) => i.status === "pending");
 
