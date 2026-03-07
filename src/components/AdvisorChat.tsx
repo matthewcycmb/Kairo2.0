@@ -57,6 +57,10 @@ export default function AdvisorChat({
   const isFollowUpSuggestions = suggestions.length > 0 &&
     suggestions.every((s) => followUpLabels.includes(s.toLowerCase()));
 
+  // Separate analysis message from chat messages
+  const analysisMsg = advisorMessages.find((m) => m.analysis);
+  const chatMessages = advisorMessages.filter((m) => !m.analysis);
+
   const activeItems = actionItems.filter((i) => i.status === "pending");
 
   return (
@@ -98,6 +102,13 @@ export default function AdvisorChat({
         </div>
       )}
 
+      {/* Pinned analysis card — stays visible above chat */}
+      {analysisMsg && (
+        <div className="mb-4">
+          <AdvisorAnalysisCard analysis={analysisMsg.analysis!} />
+        </div>
+      )}
+
       {/* Messages area */}
       <div className="flex-1 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.15] bg-white/[0.08] p-4 backdrop-blur-[40px] sm:p-6">
         {advisorMessages.length === 0 && !isLoading && (
@@ -106,21 +117,17 @@ export default function AdvisorChat({
           </div>
         )}
 
-        {advisorMessages.map((msg) =>
-          msg.analysis ? (
-            <AdvisorAnalysisCard key={msg.id} analysis={msg.analysis} />
-          ) : (
-            <ChatBubble key={msg.id} type={msg.role === "user" ? "user" : "ai"}>
-              {msg.role === "user" ? (
-                <div className="text-base leading-relaxed">{msg.content}</div>
-              ) : (
-                <div className="advisor-markdown text-base leading-[1.6]">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                </div>
-              )}
-            </ChatBubble>
-          )
-        )}
+        {chatMessages.map((msg) => (
+          <ChatBubble key={msg.id} type={msg.role === "user" ? "user" : "ai"}>
+            {msg.role === "user" ? (
+              <div className="text-base leading-relaxed">{msg.content}</div>
+            ) : (
+              <div className="advisor-markdown text-base leading-[1.6]">
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              </div>
+            )}
+          </ChatBubble>
+        ))}
 
         {/* Action buttons for follow-up responses */}
         {suggestions.length > 0 && isFollowUpSuggestions && (
