@@ -42,7 +42,7 @@ function CollapsibleSection({
   }, [children]);
 
   return (
-    <div className="rounded-xl border border-white/[0.15] bg-[rgba(15,20,30,0.85)] p-4 sm:p-6">
+    <div className="rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
       {/* Header — tappable on mobile, static on desktop */}
       <button
         onClick={onToggle}

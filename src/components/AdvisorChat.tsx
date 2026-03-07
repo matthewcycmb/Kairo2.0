@@ -62,7 +62,7 @@ export default function AdvisorChat({
     <div className="flex h-full flex-col">
       {/* Pinned action items */}
       {activeItems.length > 0 && (
-        <div className="mb-4 rounded-xl border border-white/[0.15] bg-[rgba(15,20,30,0.85)] p-4 sm:p-6">
+        <div className="mb-4 rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
           <div className="mb-3 flex items-center gap-2 border-l-[3px] border-blue-400 pl-3">
             <span className="text-lg font-bold text-white/90">
               Your Action Items
@@ -105,7 +105,7 @@ export default function AdvisorChat({
       )}
 
       {/* Messages area */}
-      <div className="flex-1 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.15] bg-white/[0.08] p-4 backdrop-blur-[40px] sm:p-6">
+      <div className="flex-1 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.15] bg-white/[0.06] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
         {advisorMessages.length === 0 && !isLoading && (
           <div className="flex h-full items-center justify-center py-12">
             <p className="text-base text-white/40">Your advisor is getting ready...</p>
@@ -131,7 +131,7 @@ export default function AdvisorChat({
               <button
                 key={i}
                 onClick={() => handleSuggestionClick(s)}
-                className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-left text-sm leading-snug text-white/60 transition-colors hover:bg-white/[0.12] hover:text-white/80"
+                className="rounded-full border border-white/[0.12] bg-white/[0.06] px-4 py-2 text-left text-sm leading-snug text-white/60 backdrop-blur-xl backdrop-saturate-[180%] transition-colors hover:bg-white/[0.12] hover:text-white/80"
               >
                 {s}
               </button>
@@ -153,12 +153,12 @@ export default function AdvisorChat({
           onKeyDown={handleKeyDown}
           placeholder="Ask your advisor anything..."
           disabled={isLoading}
-          className="flex-1 rounded-xl border border-white/[0.15] bg-white/[0.08] px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10 disabled:opacity-50"
+          className="flex-1 rounded-2xl border border-white/[0.15] bg-white/[0.06] px-4 py-3 text-base text-white backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] placeholder:text-white/40 focus:border-white/25 focus:outline-none focus:ring-2 focus:ring-white/[0.08] disabled:opacity-50"
         />
         <button
           onClick={handleSend}
           disabled={!input.trim() || isLoading}
-          className="rounded-xl border border-white/10 bg-white/[0.15] px-5 py-3 text-base font-medium text-white transition-colors hover:bg-white/[0.22] disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-2xl border border-white/[0.15] bg-white/[0.10] px-5 py-3 text-base font-medium text-white backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] transition-colors hover:bg-white/[0.18] disabled:cursor-not-allowed disabled:opacity-40"
         >
           Send
         </button>
