@@ -15,6 +15,10 @@ const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 const RATE_LIMIT_MAX = 10; // max requests per window per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
+// --- Daily request cap per IP ---
+const DAILY_LIMIT = 100; // max requests per day per IP
+const dailyLimitMap = new Map<string, { count: number; resetAt: number }>();
+
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
@@ -26,11 +30,26 @@ function isRateLimited(ip: string): boolean {
   return entry.count > RATE_LIMIT_MAX;
 }
 
+function isDailyLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = dailyLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    // Reset at midnight — use 24h window from first request
+    dailyLimitMap.set(ip, { count: 1, resetAt: now + 86_400_000 });
+    return false;
+  }
+  entry.count++;
+  return entry.count > DAILY_LIMIT;
+}
+
 // Clean up stale entries every 5 minutes
 setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of rateLimitMap) {
     if (now > entry.resetAt) rateLimitMap.delete(ip);
+  }
+  for (const [ip, entry] of dailyLimitMap) {
+    if (now > entry.resetAt) dailyLimitMap.delete(ip);
   }
 }, 300_000);
 
@@ -377,6 +396,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (isRateLimited(ip)) {
     return res.status(429).json({ error: "Too many requests — please wait a minute" });
   }
+  if (isDailyLimited(ip)) {
+    return res.status(429).json({ error: "Daily limit reached — come back tomorrow!" });
+  }
 
   try {
     const body = req.body;
@@ -490,9 +512,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).send("Invalid request type");
     }
 
+    // Use Haiku for lightweight tasks (expand questions, merge answers) to save costs
+    const isLightTask = body.type === "expand" || body.type === "expand-answer";
+    const model = isLightTask ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-5-20250929";
+    const maxTokens = isLightTask ? 1024 : 4096;
+
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-5-20250929",
-      max_tokens: 4096,
+      model,
+      max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
