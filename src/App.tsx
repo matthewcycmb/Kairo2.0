@@ -305,6 +305,15 @@ function App() {
         }
       }
 
+      // Fallback: use profile blob messages if Supabase is empty
+      if (loadedMessages.length === 0 && advisorMessages.length > 0) {
+        loadedMessages = advisorMessages;
+        // Backfill to Supabase so future loads work
+        if (profileId) {
+          saveAdvisorMessages(profileId, advisorMessages).catch(console.error);
+        }
+      }
+
       // Fallback: migrate old-format action items from profile blob
       if (loadedItems.length === 0 && actionItems.length > 0) {
         loadedItems = actionItems.map((item) => ({
@@ -312,16 +321,17 @@ function App() {
           status: ("status" in item ? item.status : ("completed" in item && (item as unknown as { completed: boolean }).completed) ? "completed" : "pending") as "pending" | "completed",
           createdAt: item.createdAt || new Date().toISOString(),
         }));
+        if (profileId && loadedItems.length > 0) {
+          saveActionItems(profileId, loadedItems).catch(console.error);
+        }
       }
 
       // Step 2: Check for pending action items — this is the FIRST check
       const pendingActions = loadedItems.filter((i) => i.status === "pending");
 
       if (pendingActions.length > 0) {
-        // Return visit with pending items → follow-up, NOT fresh analysis
-        if (loadedMessages.length > 0) {
-          setAdvisorMessages(loadedMessages);
-        }
+        // Show full history first
+        setAdvisorMessages(loadedMessages);
         setActionItems(loadedItems);
 
         const mostRecentAction = pendingActions[pendingActions.length - 1];
@@ -340,7 +350,7 @@ function App() {
         const response = await callApi({
           type: "advisor",
           profile,
-          messages: [...(loadedMessages.length > 0 ? loadedMessages.slice(-10) : []), followUpUserMsg],
+          messages: [...loadedMessages.slice(-10), followUpUserMsg],
           isFirstMessage: false,
           pendingActions,
         });
@@ -353,9 +363,8 @@ function App() {
           suggestions: ["Yes I did it", "Not yet"],
         };
 
-        const allMessages = loadedMessages.length > 0
-          ? [...loadedMessages, welcomeBackMsg]
-          : [welcomeBackMsg];
+        // Append follow-up to full history
+        const allMessages = [...loadedMessages, welcomeBackMsg];
         setAdvisorMessages(allMessages);
 
         if (profileId) {
