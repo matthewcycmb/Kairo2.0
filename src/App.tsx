@@ -196,29 +196,7 @@ function App() {
     setAdvisorLoading(true);
 
     try {
-      // Check if user is responding to an action item follow-up
-      const lowerText = userText.toLowerCase();
-      const isCompletionResponse = lowerText.includes("yes i did it") || lowerText.includes("i completed");
-
-      const pendingActions = actionItems.filter((i) => i.status === "pending");
-
-      // If "Yes I did it" → mark most recent pending action as completed
-      let updatedItems = [...actionItems];
-      if (isCompletionResponse && pendingActions.length > 0) {
-        const completedItem = pendingActions[pendingActions.length - 1];
-        updatedItems = updatedItems.map((item) =>
-          item.id === completedItem.id
-            ? { ...item, status: "completed" as const, completedAt: new Date().toISOString() }
-            : item
-        );
-        setActionItems(updatedItems);
-
-        // Persist completion to Supabase
-        if (profileId) {
-          updateActionItem(profileId, completedItem.id, { status: "completed" }).catch(console.error);
-        }
-      }
-
+      const updatedItems = [...actionItems];
       const currentPending = updatedItems.filter((i) => i.status === "pending");
 
       const response = await callApi({
@@ -240,11 +218,8 @@ function App() {
       const allMessages = [...updatedMessages, assistantMsg];
       setAdvisorMessages(allMessages);
 
-      // Only add new action items if all pending items are resolved
-      const stillPending = updatedItems.filter((i) => i.status === "pending");
-      const finalItems = stillPending.length === 0
-        ? addNewActionItems(response.actionItems, updatedItems)
-        : updatedItems;
+      // Add action items if room
+      const finalItems = addNewActionItems(response.actionItems, updatedItems);
       setActionItems(finalItems);
 
       // Persist to Supabase — await so data is saved reliably
@@ -305,16 +280,13 @@ function App() {
         }
       }
 
-      // Fallback: use profile blob messages if Supabase is empty
+      // Fallback: use profile blob messages/items if Supabase is empty
       if (loadedMessages.length === 0 && advisorMessages.length > 0) {
         loadedMessages = advisorMessages;
-        // Backfill to Supabase so future loads work
         if (profileId) {
           saveAdvisorMessages(profileId, advisorMessages).catch(console.error);
         }
       }
-
-      // Fallback: migrate old-format action items from profile blob
       if (loadedItems.length === 0 && actionItems.length > 0) {
         loadedItems = actionItems.map((item) => ({
           ...item,
@@ -326,54 +298,7 @@ function App() {
         }
       }
 
-      // Step 2: Check for pending action items — this is the FIRST check
-      const pendingActions = loadedItems.filter((i) => i.status === "pending");
-
-      if (pendingActions.length > 0) {
-        // Show full history first
-        setAdvisorMessages(loadedMessages);
-        setActionItems(loadedItems);
-
-        const mostRecentAction = pendingActions[pendingActions.length - 1];
-
-        const followUpContent = pendingActions.length > 1
-          ? `The student is returning. They have ${pendingActions.length} pending action items:\n${pendingActions.map((a) => `- "${a.action}"`).join("\n")}\nAsk which ones they've made progress on. Keep it short and friendly — 2-3 sentences max.`
-          : `The student is returning. Their pending action is: "${mostRecentAction.action}" (addresses: ${mostRecentAction.gap}). Ask if they've done it yet. Keep it short and friendly — 2-3 sentences max.`;
-
-        const followUpUserMsg: AdvisorMessage = {
-          id: `msg_${Date.now()}_system`,
-          role: "user",
-          content: followUpContent,
-          timestamp: new Date().toISOString(),
-        };
-
-        const response = await callApi({
-          type: "advisor",
-          profile,
-          messages: [...loadedMessages.slice(-10), followUpUserMsg],
-          isFirstMessage: false,
-          pendingActions,
-        });
-
-        const welcomeBackMsg: AdvisorMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: response.message,
-          timestamp: new Date().toISOString(),
-          suggestions: ["Yes I did it", "Not yet"],
-        };
-
-        // Append follow-up to full history
-        const allMessages = [...loadedMessages, welcomeBackMsg];
-        setAdvisorMessages(allMessages);
-
-        if (profileId) {
-          await saveAdvisorMessages(profileId, [welcomeBackMsg]).catch(console.error);
-        }
-        return;
-      }
-
-      // Step 3: If messages exist but no pending items → show existing messages
+      // Step 2: If messages exist → restore history
       if (loadedMessages.length > 0) {
         setAdvisorMessages(loadedMessages);
         setActionItems(loadedItems);

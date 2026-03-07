@@ -52,11 +52,6 @@ export default function AdvisorChat({
     ? lastAssistantMsg.suggestions
     : [];
 
-  // Detect if suggestions are follow-up action buttons (Yes/Not yet style)
-  const followUpLabels = ["yes i did it", "not yet", "i completed some!", "not yet, life got busy"];
-  const isFollowUpSuggestions = suggestions.length > 0 &&
-    suggestions.every((s) => followUpLabels.includes(s.toLowerCase()));
-
   // Separate analysis message from chat messages
   const analysisMsg = advisorMessages.find((m) => m.analysis);
   const chatMessages = advisorMessages.filter((m) => !m.analysis);
@@ -129,27 +124,8 @@ export default function AdvisorChat({
           </ChatBubble>
         ))}
 
-        {/* Action buttons for follow-up responses */}
-        {suggestions.length > 0 && isFollowUpSuggestions && (
-          <div className="flex gap-3 pb-1 pt-4">
-            {suggestions.map((s, i) => (
-              <button
-                key={i}
-                onClick={() => handleSuggestionClick(s)}
-                className={`flex-1 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-                  i === 0
-                    ? "bg-blue-500/20 border border-blue-400/30 text-blue-300 hover:bg-blue-500/30"
-                    : "bg-white/[0.08] border border-white/[0.12] text-white/60 hover:bg-white/[0.15] hover:text-white/80"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Suggestion chips for normal responses */}
-        {suggestions.length > 0 && !isFollowUpSuggestions && (
+        {/* Suggestion chips */}
+        {suggestions.length > 0 && (
           <div className="flex flex-col items-start gap-1.5 pb-1 pt-3">
             {suggestions.map((s, i) => (
               <button
