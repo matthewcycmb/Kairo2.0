@@ -63,7 +63,7 @@ export default function AdvisorChat({
     <div className="flex h-full flex-col">
       {/* Pinned action items */}
       {activeItems.length > 0 && (
-        <div className="mb-4 rounded-xl border border-white/[0.15] bg-white/[0.08] p-4 backdrop-blur-[40px] sm:p-6">
+        <div className="mb-4 rounded-xl border border-white/[0.15] bg-[rgba(15,20,30,0.85)] p-4 sm:p-6">
           <div className="mb-3 flex items-center gap-2 border-l-[3px] border-blue-400 pl-3">
             <span className="text-lg font-bold text-white/90">
               Your Action Items
@@ -143,12 +143,12 @@ export default function AdvisorChat({
 
         {/* Suggestion chips for normal responses */}
         {suggestions.length > 0 && !isFollowUpSuggestions && (
-          <div className="flex flex-wrap gap-2 pb-1 pt-3">
+          <div className="flex flex-col items-start gap-1.5 pb-1 pt-3">
             {suggestions.map((s, i) => (
               <button
                 key={i}
                 onClick={() => handleSuggestionClick(s)}
-                className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-white/60 transition-colors hover:bg-white/[0.12] hover:text-white/80"
+                className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-left text-sm leading-snug text-white/60 transition-colors hover:bg-white/[0.12] hover:text-white/80"
               >
                 {s}
               </button>
@@ -162,7 +162,7 @@ export default function AdvisorChat({
       </div>
 
       {/* Input area */}
-      <div className="flex gap-2 border-t border-white/10 pt-4">
+      <div className="flex gap-2 border-t border-white/10 pb-5 pt-4">
         <input
           type="text"
           value={input}

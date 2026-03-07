@@ -33,7 +33,7 @@ body::before {
 
 /* Advisor markdown formatting */
 .advisor-markdown p {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .advisor-markdown p:last-child {
@@ -48,11 +48,11 @@ body::before {
 .advisor-markdown ol,
 .advisor-markdown ul {
   margin-top: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   padding-left: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .advisor-markdown ol {
