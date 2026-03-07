@@ -248,19 +248,24 @@ function App() {
         : updatedItems;
       setActionItems(finalItems);
 
-      // Persist to Supabase
+      // Persist to Supabase — await so data is saved reliably
       if (profileId) {
-        saveAdvisorMessages(profileId, [userMsg, assistantMsg]).catch(console.error);
         const newItems = finalItems.filter((item) => !updatedItems.some((old) => old.id === item.id));
-        if (newItems.length > 0) {
-          saveActionItems(profileId, newItems).catch(console.error);
-        }
+        await Promise.all([
+          saveAdvisorMessages(profileId, [userMsg, assistantMsg]).catch(console.error),
+          newItems.length > 0
+            ? saveActionItems(profileId, newItems).catch(console.error)
+            : Promise.resolve(),
+        ]);
       }
 
-      // Also persist to profile blob
+      // Also persist to profile blob immediately
       setProfile((prev) => {
         const next = { ...prev, advisorMessages: allMessages, actionItems: finalItems, lastUpdated: new Date() };
-        if (profileId) debouncedSave(profileId, next);
+        if (profileId) {
+          try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
+          updateProfile(profileId, next).catch(console.error);
+        }
         return next;
       });
     } catch (err) {
@@ -355,7 +360,7 @@ function App() {
         setAdvisorMessages(allMessages);
 
         if (profileId) {
-          saveAdvisorMessages(profileId, [welcomeBackMsg]).catch(console.error);
+          await saveAdvisorMessages(profileId, [welcomeBackMsg]).catch(console.error);
         }
         return;
       }
@@ -389,18 +394,23 @@ function App() {
       const updatedItems = addNewActionItems(response.actionItems, loadedItems);
       setActionItems(updatedItems);
 
-      // Persist to Supabase
+      // Persist to Supabase — await so data is saved before user can close tab
       if (profileId) {
-        saveAdvisorMessages(profileId, [firstMsg]).catch(console.error);
-        if (updatedItems.length > 0) {
-          saveActionItems(profileId, updatedItems).catch(console.error);
-        }
+        await Promise.all([
+          saveAdvisorMessages(profileId, [firstMsg]).catch(console.error),
+          updatedItems.length > 0
+            ? saveActionItems(profileId, updatedItems).catch(console.error)
+            : Promise.resolve(),
+        ]);
       }
 
-      // Also persist to profile blob
+      // Also persist to profile blob immediately (no debounce)
       setProfile((prev) => {
         const next = { ...prev, advisorMessages: [firstMsg], actionItems: updatedItems, lastUpdated: new Date() };
-        if (profileId) debouncedSave(profileId, next);
+        if (profileId) {
+          try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
+          updateProfile(profileId, next).catch(console.error);
+        }
         return next;
       });
     } catch (err) {
