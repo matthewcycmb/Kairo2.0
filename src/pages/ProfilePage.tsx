@@ -366,50 +366,13 @@ export default function ProfilePage({
             />
           )}
 
-          {profileId && showSaveCard && (
-            <div className="relative mt-8 rounded-xl border border-white/[0.10] bg-white/[0.04] p-4">
-              <button
-                onClick={() => setShowSaveCard(false)}
-                className="absolute right-3 top-3 text-white/30 hover:text-white/60"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-              </button>
-              <h3 className="mb-3 text-sm font-semibold text-white">Save your profile</h3>
-              <button
-                onClick={handleCopyLink}
-                className="mb-3 w-full rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
-              >
-                {linkCopied ? "Copied!" : "Copy my profile link"}
-              </button>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={identifierInput}
-                  onChange={(e) => setIdentifierInput(e.target.value)}
-                  placeholder="Your Instagram or email"
-                  className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none"
-                  onKeyDown={(e) => e.key === "Enter" && handleSaveIdentifier()}
-                />
-                <button
-                  onClick={handleSaveIdentifier}
-                  disabled={!identifierInput.trim() || identifierSaving}
-                  className="shrink-0 rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.12] hover:text-white disabled:opacity-40"
-                >
-                  {identifierSaved ? "Saved!" : identifierSaving ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-12 border-t border-white/10 pt-4">
+          <div className="mt-6">
             {forgotStep === "idle" && (
               <button
                 onClick={() => setForgotStep("input")}
                 className="w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-3 text-sm font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70"
               >
-                + I forgot something
+                + Add new activity
               </button>
             )}
 
@@ -418,7 +381,7 @@ export default function ProfilePage({
                 <textarea
                   value={forgotText}
                   onChange={(e) => setForgotText(e.target.value)}
-                  placeholder="I also do..."
+                  placeholder="e.g. just won 2nd at a case competition, started volunteering at the hospital..."
                   rows={2}
                   className="w-full resize-none rounded-lg border border-white/[0.15] bg-white/[0.05] p-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
                 />
@@ -428,7 +391,7 @@ export default function ProfilePage({
                     disabled={forgotText.trim().length < 10 || isLoading}
                     className="rounded-lg border border-white/[0.12] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.16] disabled:opacity-40"
                   >
-                    Add to Profile
+                    Add
                   </button>
                   <button
                     onClick={resetForgotState}
@@ -497,6 +460,43 @@ export default function ProfilePage({
               </div>
             )}
           </div>
+
+          {profileId && showSaveCard && (
+            <div className="relative mt-12 rounded-xl border border-white/[0.10] bg-white/[0.04] p-4">
+              <button
+                onClick={() => setShowSaveCard(false)}
+                className="absolute right-3 top-3 text-white/30 hover:text-white/60"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </button>
+              <h3 className="mb-3 text-sm font-semibold text-white">Save your profile</h3>
+              <button
+                onClick={handleCopyLink}
+                className="mb-3 w-full rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
+              >
+                {linkCopied ? "Copied!" : "Copy my profile link"}
+              </button>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={identifierInput}
+                  onChange={(e) => setIdentifierInput(e.target.value)}
+                  placeholder="Your Instagram or email"
+                  className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none"
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveIdentifier()}
+                />
+                <button
+                  onClick={handleSaveIdentifier}
+                  disabled={!identifierInput.trim() || identifierSaving}
+                  className="shrink-0 rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.12] hover:text-white disabled:opacity-40"
+                >
+                  {identifierSaved ? "Saved!" : identifierSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
