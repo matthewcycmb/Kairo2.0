@@ -66,6 +66,13 @@ function CollapsibleSection({
   );
 }
 
+function renderBold(text: string) {
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <strong key={i} className="text-white/90 font-semibold">{part}</strong> : part
+  );
+}
+
 export default function AdvisorAnalysisCard({ analysis }: AdvisorAnalysisCardProps) {
   const [openSection, setOpenSection] = useState<string | null>(null);
 
@@ -84,7 +91,7 @@ export default function AdvisorAnalysisCard({ analysis }: AdvisorAnalysisCardPro
         <ul className="space-y-2">
           {analysis.strengths.map((s, i) => (
             <li key={i} className="text-base leading-relaxed text-white/70">
-              {s}
+              {renderBold(s)}
             </li>
           ))}
         </ul>
@@ -99,7 +106,7 @@ export default function AdvisorAnalysisCard({ analysis }: AdvisorAnalysisCardPro
         <ul className="space-y-2">
           {analysis.gaps.map((g, i) => (
             <li key={i} className="text-base leading-relaxed text-white/70">
-              {g}
+              {renderBold(g)}
             </li>
           ))}
         </ul>
@@ -112,7 +119,7 @@ export default function AdvisorAnalysisCard({ analysis }: AdvisorAnalysisCardPro
         onToggle={() => toggle("action")}
       >
         <p className="text-base leading-relaxed text-white/70">
-          {analysis.actionStep}
+          {renderBold(analysis.actionStep)}
         </p>
       </CollapsibleSection>
     </div>
