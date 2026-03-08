@@ -5,6 +5,31 @@ import ChatBubble from "./ChatBubble";
 import LoadingSpinner from "./LoadingSpinner";
 import AdvisorAnalysisCard from "./AdvisorAnalysisCard";
 
+/** Ensure message content is always a clean displayable string */
+function sanitizeContent(content: unknown): string {
+  if (typeof content === "string") {
+    // If it looks like a raw JSON object, try to extract the message field
+    const trimmed = content.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed.message === "string") return parsed.message;
+      } catch {
+        // Not valid JSON, return as-is
+      }
+    }
+    return content;
+  }
+  // If content is an object (e.g. loaded from storage incorrectly)
+  if (content && typeof content === "object") {
+    const obj = content as Record<string, unknown>;
+    if (typeof obj.message === "string") return obj.message;
+    // Last resort: stringify it cleanly
+    return JSON.stringify(content);
+  }
+  return String(content ?? "");
+}
+
 interface AdvisorChatProps {
   advisorMessages: AdvisorMessage[];
   onNewMessage: (text: string) => void;
@@ -127,7 +152,7 @@ export default function AdvisorChat({
               <div className="text-base leading-relaxed">{msg.content}</div>
             ) : (
               <div className="advisor-markdown text-base leading-[1.6]">
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                <ReactMarkdown>{sanitizeContent(msg.content)}</ReactMarkdown>
               </div>
             )}
           </ChatBubble>

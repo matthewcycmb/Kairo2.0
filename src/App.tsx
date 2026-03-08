@@ -207,10 +207,15 @@ function App() {
         pendingActions: currentPending,
       });
 
+      // Ensure message is always a plain string
+      const messageText = typeof response.message === "string"
+        ? response.message
+        : (response.message as Record<string, unknown>)?.message as string ?? JSON.stringify(response.message);
+
       const assistantMsg: AdvisorMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: response.message,
+        content: messageText,
         timestamp: new Date().toISOString(),
         suggestions: response.suggestions,
       };

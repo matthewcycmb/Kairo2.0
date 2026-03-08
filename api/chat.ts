@@ -489,20 +489,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             : [];
           return res.status(200).json({ message, analysis, suggestions, actionItems });
         } catch {
-          return res.status(200).json({ message: advisorTextBlock.text });
+          // JSON parse failed — strip any remaining JSON-like artifacts and return as plain text
+          const fallback = cleaned.replace(/[{}[\]"]/g, "").trim();
+          return res.status(200).json({ message: fallback || "I had trouble formatting my response. Try asking again!" });
         }
       }
 
       // Follow-up messages: try JSON, fall back to plain text
       try {
         const parsed = JSON.parse(cleaned);
+        // Ensure message is a string, not a nested object
+        const message = typeof parsed.message === "string"
+          ? parsed.message
+          : cleaned.replace(/[{}[\]"]/g, "").trim();
         return res.status(200).json({
-          message: parsed.message || advisorTextBlock.text,
-          suggestions: parsed.suggestions || [],
-          actionItems: parsed.actionItems || [],
+          message,
+          suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
+          actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : [],
         });
       } catch {
-        return res.status(200).json({ message: advisorTextBlock.text });
+        // Model returned plain text instead of JSON — use it directly
+        return res.status(200).json({ message: cleaned });
       }
     }
 
