@@ -84,6 +84,40 @@ export function formatProfileAsText(profile: StudentProfile): string {
   return lines.join("\n");
 }
 
+export function formatResumeAsText(profile: StudentProfile): string {
+  const grouped = groupByCategory(profile.activities);
+  const lines: string[] = [
+    "[YOUR NAME]",
+    "[Email] | [Phone] | [City, Province]",
+    "",
+  ];
+
+  for (const [category, activities] of grouped) {
+    lines.push(getCategoryDisplayName(category).toUpperCase());
+    lines.push("-".repeat(getCategoryDisplayName(category).length));
+
+    for (const activity of activities) {
+      const header = activity.yearsActive
+        ? `${activity.name} | ${activity.yearsActive}`
+        : activity.name;
+      lines.push(header);
+      if (activity.role) lines.push(`  ${activity.role}`);
+      if (activity.description) lines.push(`  ${activity.description}`);
+      if (activity.achievements && activity.achievements.length > 0) {
+        for (const achievement of activity.achievements) {
+          lines.push(`  • ${achievement}`);
+        }
+      }
+      if (activity.skills && activity.skills.length > 0) {
+        lines.push(`  Skills: ${activity.skills.join(", ")}`);
+      }
+      lines.push("");
+    }
+  }
+
+  return lines.join("\n");
+}
+
 export async function copyProfileToClipboard(
   profile: StudentProfile
 ): Promise<void> {

@@ -96,9 +96,10 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
   const canSubmit = text.trim().length >= 20 && !isLoading;
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center px-4 py-12">
-      <div className="mb-8 text-center">
-        <h1 className="mb-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center px-4 py-12">
+      {/* Title + subtitle pushed down with top spacer */}
+      <div className="flex flex-1 flex-col items-center justify-end pb-10 text-center">
+        <h1 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
           Kairo
         </h1>
         <p className="text-base text-white/60 sm:text-lg">
@@ -106,6 +107,7 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
         </p>
       </div>
 
+      {/* Text box + button */}
       <div className="w-full rounded-2xl border border-white/[0.15] bg-white/[0.08] p-4 backdrop-blur-[40px] sm:p-6">
         <div className="relative">
           <textarea
@@ -156,7 +158,11 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
         </div>
       </div>
 
-      <div className="mt-4 text-center">
+      {/* Social proof */}
+      <p className="mt-4 text-xs text-white/30">Used by students across Vancouver and Hong Kong</p>
+
+      {/* Lookup — pushed to bottom */}
+      <div className="mt-auto pt-12 text-center">
         {!showLookup ? (
           <button
             onClick={() => setShowLookup(true)}

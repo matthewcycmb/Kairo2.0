@@ -359,6 +359,79 @@ Rules:
 - Return ONLY valid JSON, no extra text`;
 }
 
+function buildAppHelperActivitiesSummary(profile: AdvisorProfile): string {
+  return profile.activities
+    .map((a) => {
+      const parts = [`• ${a.name} (${a.category})`];
+      if (a.role) parts.push(`  Role: ${a.role}`);
+      parts.push(`  ${a.description}`);
+      if (a.achievements?.length) parts.push(`  Achievements: ${a.achievements.join(", ")}`);
+      if (a.skills?.length) parts.push(`  Skills: ${a.skills.join(", ")}`);
+      if (a.yearsActive) parts.push(`  Duration: ${a.yearsActive}`);
+      if (a.hoursPerWeek) parts.push(`  Hours/week: ${a.hoursPerWeek}`);
+      return parts.join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildAppHelperClarifyPrompt(profile: AdvisorProfile, question: string): string {
+  const activitiesSummary = buildAppHelperActivitiesSummary(profile);
+
+  return `A student wants to answer a university application question. Before writing, you need to ask them 2-3 short clarifying questions so you can write an authentic, specific answer without fabricating any details.
+
+STUDENT'S PROFILE:
+${activitiesSummary}
+
+APPLICATION QUESTION:
+"${question}"
+
+Generate 2-3 short, casual clarifying questions. These should help you understand:
+- Which specific activity/experience they want to focus on (if the question is open-ended)
+- A specific moment, story, or experience they remember
+- What they personally felt or took away from it
+
+Keep the questions short and conversational — like a friend helping them brainstorm, not a formal interview.
+
+Respond with JSON: { "questions": ["question 1", "question 2", "question 3"] }`;
+}
+
+function buildAppHelperGeneratePrompt(
+  profile: AdvisorProfile,
+  question: string,
+  clarifyAnswers: { question: string; answer: string }[]
+): string {
+  const activitiesSummary = buildAppHelperActivitiesSummary(profile);
+  const answersText = clarifyAnswers
+    .map((a) => `Q: ${a.question}\nA: ${a.answer}`)
+    .join("\n\n");
+
+  return `You are a university application ghostwriter. A student needs you to answer an application question. You have their profile data AND their own words from clarifying questions. Write ONLY from what you know — never invent details.
+
+STUDENT'S FULL PROFILE:
+${activitiesSummary}
+
+APPLICATION QUESTION:
+"${question}"
+
+STUDENT'S OWN WORDS (from clarifying questions):
+${answersText}
+
+Write a compelling, personal answer to this question.
+
+RULES:
+- Write in first person as the student. Use "I", "my", "me".
+- Use ONLY facts from their profile and their own words above. NEVER invent specific scores, dates, scenarios, quotes, dialogue, or details the student didn't provide.
+- Reference their real activities, roles, and achievements by name.
+- Weave in the personal details and feelings they shared in their answers — this is what makes it authentic.
+- Write naturally — like a thoughtful student, not an AI. Avoid clichés like "I learned the importance of" or "this experience taught me that".
+- Show, don't tell. Use the specific moments they described rather than inventing new ones.
+- Keep it 150-250 words — concise and impactful.
+- End with forward momentum — not a tidy moral.
+- Do NOT wrap in quotes. Just write the answer directly.
+
+Respond with a JSON object: { "answer": "the full answer text" }`;
+}
+
 function buildExpandAnswerPrompt(
   activity: unknown,
   answers: { question: string; answer: string }[]
@@ -447,8 +520,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (body.pendingActions && !Array.isArray(body.pendingActions)) {
         return res.status(400).json({ error: "Invalid pending actions" });
       }
+    } else if (body.type === "app-helper") {
+      if (!body.profile || !Array.isArray(body.profile.activities)) {
+        return res.status(400).json({ error: "Invalid profile" });
+      }
+      if (typeof body.question !== "string" || body.question.trim().length < 5 || body.question.length > 2000) {
+        return res.status(400).json({ error: "Question must be 5-2,000 characters" });
+      }
     } else {
       return res.status(400).json({ error: "Invalid request type" });
+    }
+
+    if (body.type === "app-helper") {
+      const hasClarifyAnswers = Array.isArray(body.clarifyAnswers) && body.clarifyAnswers.length > 0;
+      const prompt = hasClarifyAnswers
+        ? buildAppHelperGeneratePrompt(body.profile, body.question.trim(), body.clarifyAnswers)
+        : buildAppHelperClarifyPrompt(body.profile, body.question.trim());
+
+      const appHelperMessage = await anthropic.messages.create({
+        model: hasClarifyAnswers ? "claude-sonnet-4-5-20250929" : "claude-haiku-4-5-20251001",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const textBlock = appHelperMessage.content.find((block) => block.type === "text");
+      if (!textBlock || textBlock.type !== "text") {
+        return res.status(500).send("No text response from AI");
+      }
+
+      const cleaned = textBlock.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+
+      try {
+        const parsed = JSON.parse(cleaned);
+        if (hasClarifyAnswers) {
+          return res.status(200).json({ answer: parsed.answer || cleaned });
+        } else {
+          return res.status(200).json({ questions: parsed.questions || [] });
+        }
+      } catch {
+        if (hasClarifyAnswers) {
+          return res.status(200).json({ answer: cleaned });
+        } else {
+          return res.status(200).json({ questions: [] });
+        }
+      }
     }
 
     if (body.type === "advisor") {

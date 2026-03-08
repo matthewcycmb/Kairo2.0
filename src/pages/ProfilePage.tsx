@@ -7,6 +7,8 @@ import { saveIdentifier } from "../lib/profileApi";
 import CategorySection from "../components/CategorySection";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AdvisorChat from "../components/AdvisorChat";
+import AppHelper from "../components/AppHelper";
+import ResumeModal from "../components/ResumeModal";
 
 interface ProfilePageProps {
   profile: StudentProfile;
@@ -45,7 +47,7 @@ export default function ProfilePage({
   onToggleActionItem,
   profileId,
 }: ProfilePageProps) {
-  const [activeTab, setActiveTab] = useState<"profile" | "advisor">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "advisor" | "apphelper">("profile");
   const [forgotStep, setForgotStep] = useState<"idle" | "input" | "followup">("idle");
   const [forgotText, setForgotText] = useState("");
   const [newActivities, setNewActivities] = useState<ParsedActivity[]>([]);
@@ -58,6 +60,8 @@ export default function ProfilePage({
   const [identifierSaved, setIdentifierSaved] = useState(false);
   const [identifierSaving, setIdentifierSaving] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showResume, setShowResume] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const grouped = groupByCategory(profile.activities);
 
@@ -234,7 +238,7 @@ export default function ProfilePage({
     }
   };
 
-  const handleTabClick = (tab: "profile" | "advisor") => {
+  const handleTabClick = (tab: "profile" | "advisor" | "apphelper") => {
     setActiveTab(tab);
     if (tab === "advisor") onAdvisorTabOpened();
   };
@@ -242,31 +246,54 @@ export default function ProfilePage({
   return (
     <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-8">
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Your Profile</h1>
           <p className="text-sm text-white/40">
             {activeTab === "profile"
               ? "Click text to edit, or expand activities for more depth"
-              : "Get personalized advice based on your profile"}
+              : activeTab === "advisor"
+                ? "Get personalized advice based on your profile"
+                : "Write tailored application answers from your profile"}
           </p>
         </div>
-        {activeTab === "profile" && (
-          <div className="flex w-full gap-2 sm:w-auto">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowResume(true)}
+            className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+          >
+            Resume
+          </button>
+          <div className="relative">
             <button
-              onClick={handleCopy}
-              className="flex-1 rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2.5 text-sm font-medium text-white backdrop-blur-[40px] transition-colors hover:bg-white/[0.22] sm:flex-none"
+              onClick={() => setShowMenu((v) => !v)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/[0.10] hover:text-white/80"
             >
-              {copied ? "Copied!" : "Copy"}
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+              </svg>
             </button>
-            <button
-              onClick={onStartOver}
-              className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/70 backdrop-blur-[40px] transition-colors hover:bg-white/[0.12] hover:text-white sm:flex-none"
-            >
-              Start Over
-            </button>
+            {showMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
+                  <button
+                    onClick={() => { handleCopy(); setShowMenu(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/[0.08]"
+                  >
+                    {copied ? "Copied!" : "Copy Profile"}
+                  </button>
+                  <button
+                    onClick={() => { onStartOver(); setShowMenu(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm text-white/60 transition-colors hover:bg-white/[0.08] hover:text-white/80"
+                  >
+                    Start Over
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -290,6 +317,16 @@ export default function ProfilePage({
           }`}
         >
           Advisor
+        </button>
+        <button
+          onClick={() => handleTabClick("apphelper")}
+          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            activeTab === "apphelper"
+              ? "bg-white/[0.15] text-white"
+              : "text-white/50 hover:text-white/70"
+          }`}
+        >
+          Application Writer
         </button>
       </div>
 
@@ -463,18 +500,25 @@ export default function ProfilePage({
         </>
       )}
 
-      {/* Advisor tab content */}
-      {activeTab === "advisor" && (
-        <div className="flex-1">
-          <AdvisorChat
-            advisorMessages={advisorMessages}
-            onNewMessage={onAdvisorMessage}
-            isLoading={advisorLoading}
-            onRefreshAnalysis={onRefreshAnalysis}
-            actionItems={actionItems}
-            onToggleActionItem={onToggleActionItem}
-          />
-        </div>
+      {/* Advisor tab content — kept mounted to preserve scroll & state */}
+      <div className={activeTab === "advisor" ? "flex-1" : "hidden"}>
+        <AdvisorChat
+          advisorMessages={advisorMessages}
+          onNewMessage={onAdvisorMessage}
+          isLoading={advisorLoading}
+          onRefreshAnalysis={onRefreshAnalysis}
+          actionItems={actionItems}
+          onToggleActionItem={onToggleActionItem}
+        />
+      </div>
+
+      {/* App Helper tab content — kept mounted to preserve state */}
+      <div className={activeTab === "apphelper" ? "flex-1" : "hidden"}>
+        <AppHelper profile={profile} />
+      </div>
+
+      {showResume && (
+        <ResumeModal profile={profile} onClose={() => setShowResume(false)} />
       )}
     </div>
   );

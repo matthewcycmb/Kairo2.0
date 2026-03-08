@@ -114,3 +114,15 @@ export interface AdvisorResponse {
   suggestions?: string[];
   actionItems?: { action: string; gap: string }[];
 }
+
+export interface AppHelperRequest {
+  type: "app-helper";
+  profile: StudentProfile;
+  question: string;
+  clarifyAnswers?: { question: string; answer: string }[];
+}
+
+export interface AppHelperResponse {
+  questions?: string[];
+  answer?: string;
+}

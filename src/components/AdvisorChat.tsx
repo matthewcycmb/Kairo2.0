@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ComponentPropsWithoutRef } from "react";
 import type { AdvisorMessage, ActionItem } from "../types/profile";
 import ReactMarkdown from "react-markdown";
 import ChatBubble from "./ChatBubble";
@@ -48,6 +48,7 @@ export default function AdvisorChat({
   onToggleActionItem,
 }: AdvisorChatProps) {
   const [input, setInput] = useState("");
+  const [copiedBlock, setCopiedBlock] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,6 +72,42 @@ export default function AdvisorChat({
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleCopyBlock = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedBlock(text);
+      setTimeout(() => setCopiedBlock(null), 2000);
+    } catch {
+      // silent fail
+    }
+  };
+
+  const markdownComponents = {
+    pre: ({ children, ...props }: ComponentPropsWithoutRef<"pre">) => {
+      // Extract text content from the code child
+      let codeText = "";
+      if (children && typeof children === "object" && "props" in (children as React.ReactElement)) {
+        const codeEl = children as React.ReactElement<{ children?: string }>;
+        codeText = typeof codeEl.props.children === "string" ? codeEl.props.children : "";
+      }
+      return (
+        <div className="group relative my-2">
+          <pre {...props} className="overflow-x-auto rounded-lg bg-white/[0.06] p-3 text-sm">
+            {children}
+          </pre>
+          {codeText && (
+            <button
+              onClick={() => handleCopyBlock(codeText)}
+              className="absolute right-2 top-2 rounded-md border border-white/10 bg-white/[0.08] px-2 py-1 text-xs text-white/50 opacity-0 transition-opacity hover:bg-white/[0.15] hover:text-white/80 group-hover:opacity-100"
+            >
+              {copiedBlock === codeText ? "Copied!" : "Copy"}
+            </button>
+          )}
+        </div>
+      );
+    },
   };
 
   // Get suggestions from the last assistant message
@@ -117,6 +154,15 @@ export default function AdvisorChat({
                   <p className="mt-0.5 text-sm text-white/35">
                     {item.gap}
                   </p>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onNewMessage(`Draft me a ready-to-copy message for this: "${item.action}". Put it in a code block.`);
+                    }}
+                    className="mt-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/40 transition-colors hover:bg-white/[0.10] hover:text-white/70"
+                  >
+                    Draft this for me
+                  </button>
                 </div>
               </label>
             ))}
@@ -152,7 +198,7 @@ export default function AdvisorChat({
               <div className="text-base leading-relaxed">{msg.content}</div>
             ) : (
               <div className="advisor-markdown text-base leading-[1.6]">
-                <ReactMarkdown>{sanitizeContent(msg.content)}</ReactMarkdown>
+                <ReactMarkdown components={markdownComponents}>{sanitizeContent(msg.content)}</ReactMarkdown>
               </div>
             )}
           </ChatBubble>

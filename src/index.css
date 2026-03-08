@@ -76,6 +76,48 @@ body::before {
   margin-bottom: 0;
 }
 
+/* Print styles for resume PDF */
+@media print {
+  body {
+    background: white !important;
+  }
+
+  body::before {
+    display: none !important;
+  }
+
+  /* Hide everything by default, but allow children to become visible */
+  * {
+    visibility: hidden;
+  }
+
+  /* Show the resume content and all its children */
+  .resume-content,
+  .resume-content * {
+    visibility: visible !important;
+  }
+
+  /* Make the resume content the top-level print block */
+  .resume-content {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0.75in !important;
+    background: white !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  @page {
+    size: letter;
+    margin: 0;
+  }
+}
+
 /* Custom checkbox checkmark */
 input[type="checkbox"].appearance-none:checked::after {
   content: '\2713';
