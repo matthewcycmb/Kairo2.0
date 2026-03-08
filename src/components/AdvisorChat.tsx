@@ -9,6 +9,7 @@ interface AdvisorChatProps {
   advisorMessages: AdvisorMessage[];
   onNewMessage: (text: string) => void;
   isLoading: boolean;
+  onRefreshAnalysis: () => void;
   actionItems: ActionItem[];
   onToggleActionItem: (id: string) => void;
 }
@@ -17,6 +18,7 @@ export default function AdvisorChat({
   advisorMessages,
   onNewMessage,
   isLoading,
+  onRefreshAnalysis,
   actionItems,
   onToggleActionItem,
 }: AdvisorChatProps) {
@@ -101,6 +103,13 @@ export default function AdvisorChat({
       {analysisMsg && (
         <div className="mb-4">
           <AdvisorAnalysisCard analysis={analysisMsg.analysis!} />
+          <button
+            onClick={onRefreshAnalysis}
+            disabled={isLoading}
+            className="mt-2 w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-2.5 text-sm font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70 disabled:opacity-40"
+          >
+            {isLoading ? "Refreshing..." : "Refresh Analysis"}
+          </button>
         </div>
       )}
 

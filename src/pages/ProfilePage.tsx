@@ -21,6 +21,7 @@ interface ProfilePageProps {
   onAdvisorMessage: (text: string) => void;
   advisorLoading: boolean;
   onAdvisorTabOpened: () => void;
+  onRefreshAnalysis: () => void;
   actionItems: ActionItem[];
   onToggleActionItem: (id: string) => void;
   profileId: string | null;
@@ -39,6 +40,7 @@ export default function ProfilePage({
   onAdvisorMessage,
   advisorLoading,
   onAdvisorTabOpened,
+  onRefreshAnalysis,
   actionItems,
   onToggleActionItem,
   profileId,
@@ -468,6 +470,7 @@ export default function ProfilePage({
             advisorMessages={advisorMessages}
             onNewMessage={onAdvisorMessage}
             isLoading={advisorLoading}
+            onRefreshAnalysis={onRefreshAnalysis}
             actionItems={actionItems}
             onToggleActionItem={onToggleActionItem}
           />

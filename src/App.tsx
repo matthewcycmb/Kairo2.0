@@ -380,6 +380,52 @@ function App() {
     });
   };
 
+  const handleRefreshAnalysis = async () => {
+    setAdvisorLoading(true);
+    try {
+      const response = await callApi({
+        type: "advisor",
+        profile,
+        messages: [],
+        isFirstMessage: true,
+      });
+
+      const newAnalysisMsg: AdvisorMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: response.message,
+        timestamp: new Date().toISOString(),
+        ...(response.analysis && { analysis: response.analysis }),
+        suggestions: response.suggestions,
+      };
+
+      // Replace old analysis message, keep chat history
+      const chatOnly = advisorMessages.filter((m) => !m.analysis);
+      const allMessages = [newAnalysisMsg, ...chatOnly];
+      setAdvisorMessages(allMessages);
+
+      const updatedItems = addNewActionItems(response.actionItems, actionItems);
+      setActionItems(updatedItems);
+
+      if (profileId) {
+        await saveAdvisorMessages(profileId, [newAnalysisMsg]).catch(console.error);
+      }
+
+      setProfile((prev) => {
+        const next = { ...prev, advisorMessages: allMessages, actionItems: updatedItems, lastUpdated: new Date() };
+        if (profileId) {
+          try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
+          updateProfile(profileId, next).catch(console.error);
+        }
+        return next;
+      });
+    } catch (err) {
+      console.error("Refresh analysis error:", err);
+    } finally {
+      setAdvisorLoading(false);
+    }
+  };
+
   const handleStartOver = () => {
     if (profileId) try { localStorage.removeItem(`kairo_profile_${profileId}`); } catch {}
     setCurrentView("input");
@@ -435,6 +481,7 @@ function App() {
           onAdvisorMessage={handleAdvisorMessage}
           advisorLoading={advisorLoading}
           onAdvisorTabOpened={handleAdvisorTabOpened}
+          onRefreshAnalysis={handleRefreshAnalysis}
           actionItems={actionItems}
           onToggleActionItem={handleToggleActionItem}
           profileId={profileId}
