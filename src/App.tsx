@@ -387,7 +387,7 @@ function App() {
     });
   };
 
-  const handleRefreshAnalysis = async () => {
+  const handleNewConversation = async () => {
     setRefreshingAnalysis(true);
     try {
       const response = await callApi({
@@ -397,7 +397,7 @@ function App() {
         isFirstMessage: true,
       });
 
-      const newAnalysisMsg: AdvisorMessage = {
+      const firstMsg: AdvisorMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
         content: response.message,
@@ -405,20 +405,23 @@ function App() {
         suggestions: response.suggestions,
       };
 
-      // Replace the first assistant message (the opening analysis), keep the rest
-      const rest = advisorMessages.slice(1);
-      const allMessages = [newAnalysisMsg, ...rest];
-      setAdvisorMessages(allMessages);
+      // Clear visible chat — old messages are already saved in Supabase
+      setAdvisorMessages([firstMsg]);
 
       const updatedItems = addNewActionItems(response.actionItems, actionItems);
       setActionItems(updatedItems);
 
       if (profileId) {
-        await saveAdvisorMessages(profileId, [newAnalysisMsg]).catch(console.error);
+        await Promise.all([
+          saveAdvisorMessages(profileId, [firstMsg]).catch(console.error),
+          updatedItems.length > 0
+            ? saveActionItems(profileId, updatedItems).catch(console.error)
+            : Promise.resolve(),
+        ]);
       }
 
       setProfile((prev) => {
-        const next = { ...prev, advisorMessages: allMessages, actionItems: updatedItems, lastUpdated: new Date() };
+        const next = { ...prev, advisorMessages: [firstMsg], actionItems: updatedItems, lastUpdated: new Date() };
         if (profileId) {
           try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
           updateProfile(profileId, next).catch(console.error);
@@ -426,7 +429,7 @@ function App() {
         return next;
       });
     } catch (err) {
-      console.error("Refresh analysis error:", err);
+      console.error("New conversation error:", err);
     } finally {
       setRefreshingAnalysis(false);
     }
@@ -510,7 +513,7 @@ function App() {
           advisorLoading={advisorLoading}
           refreshingAnalysis={refreshingAnalysis}
           onAdvisorTabOpened={handleAdvisorTabOpened}
-          onRefreshAnalysis={handleRefreshAnalysis}
+          onNewConversation={handleNewConversation}
           actionItems={actionItems}
           onToggleActionItem={handleToggleActionItem}
           profileId={profileId}
