@@ -45,6 +45,7 @@ export default function AdvisorChat({
   const [input, setInput] = useState("");
   const [copiedBlock, setCopiedBlock] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -54,6 +55,7 @@ export default function AdvisorChat({
     const text = input.trim();
     if (!text || isLoading) return;
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
     onNewMessage(text);
   };
 
@@ -166,14 +168,19 @@ export default function AdvisorChat({
 
       {/* Input area */}
       <div className="flex gap-2 border-t border-white/10 pb-5 pt-4">
-        <input
-          type="text"
+        <textarea
+          ref={inputRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            setInput(e.target.value);
+            e.target.style.height = "auto";
+            e.target.style.height = e.target.scrollHeight + "px";
+          }}
           onKeyDown={handleKeyDown}
           placeholder="Ask your advisor anything..."
           disabled={isLoading}
-          className="flex-1 rounded-2xl border border-white/[0.15] bg-white/[0.06] px-4 py-3 text-base text-white backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] placeholder:text-white/40 focus:border-white/25 focus:outline-none focus:ring-2 focus:ring-white/[0.08] disabled:opacity-50"
+          rows={1}
+          className="flex-1 resize-none overflow-hidden rounded-2xl border border-white/[0.15] bg-white/[0.06] px-4 py-3 text-base text-white backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] placeholder:text-white/40 focus:border-white/25 focus:outline-none focus:ring-2 focus:ring-white/[0.08] disabled:opacity-50"
         />
         <button
           onClick={handleSend}

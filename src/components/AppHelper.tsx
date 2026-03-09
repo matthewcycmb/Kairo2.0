@@ -1,12 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { StudentProfile } from "../types/profile";
 import { callApi } from "../lib/apiClient";
 
-interface AppHelperProps {
-  profile: StudentProfile;
+interface AppHelperSession {
+  id: string;
+  question: string;
+  clarifyQuestions: string[];
+  clarifyAnswers: Record<number, string>;
+  answer: string;
+  timestamp: string;
 }
 
-export default function AppHelper({ profile }: AppHelperProps) {
+interface AppHelperProps {
+  profile: StudentProfile;
+  profileId: string | null;
+  loadedSession?: AppHelperSession | null;
+  onSessionLoaded?: () => void;
+}
+
+function getStorageKey(profileId: string) {
+  return `kairo-apphelper-sessions-${profileId}`;
+}
+
+function loadSessions(profileId: string | null): AppHelperSession[] {
+  if (!profileId) return [];
+  try {
+    const saved = localStorage.getItem(getStorageKey(profileId));
+    if (saved) return JSON.parse(saved);
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+function saveSessions(profileId: string | null, sessions: AppHelperSession[]) {
+  if (!profileId) return;
+  localStorage.setItem(getStorageKey(profileId), JSON.stringify(sessions));
+}
+
+export { type AppHelperSession };
+
+export default function AppHelper({ profile, profileId, loadedSession, onSessionLoaded }: AppHelperProps) {
   const [question, setQuestion] = useState("");
   const [step, setStep] = useState<"question" | "clarify" | "answer">("question");
   const [clarifyQuestions, setClarifyQuestions] = useState<string[]>([]);
@@ -16,6 +50,21 @@ export default function AppHelper({ profile }: AppHelperProps) {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editingAnswer, setEditingAnswer] = useState(false);
+  const [sessions, setSessions] = useState<AppHelperSession[]>(() => loadSessions(profileId));
+
+  // Re-load sessions when profileId changes
+  useEffect(() => {
+    setSessions(loadSessions(profileId));
+  }, [profileId]);
+
+  // Load session from parent
+  useEffect(() => {
+    if (loadedSession) {
+      loadSession(loadedSession);
+      onSessionLoaded?.();
+    }
+  }, [loadedSession]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGetQuestions = async () => {
     if (question.trim().length < 5 || isLoading) return;
@@ -68,6 +117,19 @@ export default function AppHelper({ profile }: AppHelperProps) {
       if (response.answer) {
         setAnswer(response.answer);
         setStep("answer");
+
+        // Auto-save session
+        const session: AppHelperSession = {
+          id: `session-${Date.now()}`,
+          question: question.trim(),
+          clarifyQuestions,
+          clarifyAnswers,
+          answer: response.answer,
+          timestamp: new Date().toISOString(),
+        };
+        const updated = [session, ...sessions];
+        setSessions(updated);
+        saveSessions(profileId, updated);
       } else {
         setError("Couldn't generate an answer. Try again.");
       }
@@ -86,6 +148,16 @@ export default function AppHelper({ profile }: AppHelperProps) {
     setAnswer("");
     setError(null);
   };
+
+  const loadSession = (session: AppHelperSession) => {
+    setQuestion(session.question);
+    setClarifyQuestions(session.clarifyQuestions);
+    setClarifyAnswers(session.clarifyAnswers);
+    setAnswer(session.answer);
+    setStep("answer");
+    setError(null);
+  };
+
 
   const handleCopy = async () => {
     try {
@@ -187,14 +259,20 @@ export default function AppHelper({ profile }: AppHelperProps) {
             {clarifyQuestions.map((q, i) => (
               <div key={i}>
                 <label className="mb-1.5 block text-sm text-white/60">{q}</label>
-                <input
-                  type="text"
+                <textarea
                   value={clarifyAnswers[i] || ""}
-                  onChange={(e) => setClarifyAnswers((prev) => ({ ...prev, [i]: e.target.value }))}
+                  onChange={(e) => {
+                    setClarifyAnswers((prev) => ({ ...prev, [i]: e.target.value }));
+                    const el = e.target;
+                    el.style.height = "auto";
+                    el.style.height = el.scrollHeight + "px";
+                  }}
                   placeholder="Your answer..."
-                  className="w-full rounded-lg border border-white/[0.12] bg-white/[0.06] px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
+                  rows={1}
+                  className="w-full resize-none overflow-hidden rounded-lg border border-white/[0.12] bg-white/[0.06] px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && allClarifyAnswered) {
+                    if (e.key === "Enter" && !e.shiftKey && allClarifyAnswered) {
+                      e.preventDefault();
                       handleGenerate();
                     }
                   }}
@@ -219,16 +297,33 @@ export default function AppHelper({ profile }: AppHelperProps) {
         <div className="rounded-2xl border border-white/[0.15] bg-white/[0.06] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-medium text-white/70">Your Answer</span>
-            <button
-              onClick={handleCopy}
-              className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
-            >
-              {copied ? "Copied!" : "Copy"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditingAnswer((v) => !v)}
+                className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
+              >
+                {editingAnswer ? "Done" : "Edit"}
+              </button>
+              <button
+                onClick={handleCopy}
+                className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
           </div>
-          <div className="whitespace-pre-wrap rounded-xl border border-white/[0.10] bg-white/[0.04] p-4 text-base leading-relaxed text-white/85">
-            {answer}
-          </div>
+          {editingAnswer ? (
+            <textarea
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              className="w-full resize-none rounded-xl border border-white/[0.20] bg-white/[0.06] p-4 text-base leading-relaxed text-white/85 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
+              rows={Math.max(6, answer.split("\n").length + 2)}
+            />
+          ) : (
+            <div className="whitespace-pre-wrap rounded-xl border border-white/[0.10] bg-white/[0.04] p-4 text-base leading-relaxed text-white/85">
+              {answer}
+            </div>
+          )}
           <p className="mt-3 text-xs text-white/30">
             Always review and edit before submitting — make sure everything is accurate and sounds like you.
           </p>

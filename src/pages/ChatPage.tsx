@@ -262,13 +262,17 @@ export default function ChatPage({
               >
                 <p className="mb-2 text-sm text-white/80">{q.question}</p>
                 <div className="flex gap-2">
-                  <input
-                    type="text"
+                  <textarea
                     value={answers[q.id] === "__SKIPPED__" ? "" : answers[q.id] || ""}
-                    onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                    onChange={(e) => {
+                      handleAnswerChange(q.id, e.target.value);
+                      e.target.style.height = "auto";
+                      e.target.style.height = e.target.scrollHeight + "px";
+                    }}
                     placeholder="Your answer..."
                     disabled={answers[q.id] === "__SKIPPED__"}
-                    className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
+                    rows={1}
+                    className="flex-1 resize-none overflow-hidden rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
                   />
                   <button
                     onClick={() => handleSkip(q.id)}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { ParsedActivity } from "../types/activity";
 import type { StudentProfile, FollowUpQuestion, AdvisorMessage, ActionItem, ConversationSummary } from "../types/profile";
 import { groupByCategory, copyProfileToClipboard } from "../lib/profileUtils";
@@ -7,7 +7,7 @@ import { saveIdentifier } from "../lib/profileApi";
 import CategorySection from "../components/CategorySection";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AdvisorChat from "../components/AdvisorChat";
-import AppHelper from "../components/AppHelper";
+import AppHelper, { type AppHelperSession } from "../components/AppHelper";
 import ResumeModal from "../components/ResumeModal";
 
 function formatRelativeTime(timestamp: string): string {
@@ -93,6 +93,29 @@ export default function ProfilePage({
   const [showResume, setShowResume] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showPrevChats, setShowPrevChats] = useState(false);
+  const [showPrevSessions, setShowPrevSessions] = useState(false);
+  const [appHelperSessions, setAppHelperSessions] = useState<AppHelperSession[]>([]);
+  const [loadedSession, setLoadedSession] = useState<AppHelperSession | null>(null);
+
+  const appHelperStorageKey = profileId ? `kairo-apphelper-sessions-${profileId}` : null;
+
+  const refreshAppHelperSessions = useCallback(() => {
+    if (!appHelperStorageKey) { setAppHelperSessions([]); return; }
+    try {
+      const saved = localStorage.getItem(appHelperStorageKey);
+      setAppHelperSessions(saved ? JSON.parse(saved) : []);
+    } catch {
+      setAppHelperSessions([]);
+    }
+  }, [appHelperStorageKey]);
+
+  const deleteAppHelperSession = useCallback((sessionId: string) => {
+    if (!appHelperStorageKey) return;
+    const updated = appHelperSessions.filter((s) => s.id !== sessionId);
+    localStorage.setItem(appHelperStorageKey, JSON.stringify(updated));
+    setAppHelperSessions(updated);
+    if (loadedSession?.id === sessionId) setLoadedSession(null);
+  }, [appHelperStorageKey, appHelperSessions, loadedSession]);
 
   const grouped = groupByCategory(profile.activities);
 
@@ -370,6 +393,69 @@ export default function ProfilePage({
                 </>
               )}
             </div>
+          ) : activeTab === "apphelper" ? (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowPrevSessions((v) => !v);
+                  if (!showPrevSessions) refreshAppHelperSessions();
+                }}
+                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+              >
+                Previous sessions
+              </button>
+              {showPrevSessions && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowPrevSessions(false)} />
+                  <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
+                    {loadedSession && (
+                      <button
+                        onClick={() => {
+                          setLoadedSession(null);
+                          setShowPrevSessions(false);
+                        }}
+                        className="w-full border-b border-white/[0.10] px-4 py-2.5 text-left text-sm font-medium text-blue-400 transition-colors hover:bg-white/[0.08]"
+                      >
+                        Start new question
+                      </button>
+                    )}
+                    {appHelperSessions.length === 0 ? (
+                      <p className="px-4 py-3 text-sm text-white/40">No previous sessions</p>
+                    ) : (
+                      appHelperSessions.map((session) => (
+                        <div
+                          key={session.id}
+                          className="group flex items-center transition-colors hover:bg-white/[0.08]"
+                        >
+                          <button
+                            onClick={() => {
+                              setLoadedSession(session);
+                              setShowPrevSessions(false);
+                            }}
+                            className="min-w-0 flex-1 px-4 py-2.5 text-left"
+                          >
+                            <p className="truncate text-sm text-white/80">{session.question}</p>
+                            <p className="text-xs text-white/35">{formatRelativeTime(session.timestamp)}</p>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteAppHelperSession(session.id);
+                            }}
+                            className="shrink-0 px-3 py-2 text-white/20 opacity-0 transition-all hover:text-red-400 group-hover:opacity-100"
+                            title="Delete session"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+                              <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5A.75.75 0 0 1 9.95 6Z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           ) : (
             <button
               onClick={() => setShowResume(true)}
@@ -543,13 +629,17 @@ export default function ProfilePage({
                   >
                     <p className="mb-2 text-sm text-white/80">{q.question}</p>
                     <div className="flex gap-2">
-                      <input
-                        type="text"
+                      <textarea
                         value={answers[q.id] === "__SKIPPED__" ? "" : answers[q.id] || ""}
-                        onChange={(e) => handleForgotAnswerChange(q.id, e.target.value)}
+                        onChange={(e) => {
+                          handleForgotAnswerChange(q.id, e.target.value);
+                          e.target.style.height = "auto";
+                          e.target.style.height = e.target.scrollHeight + "px";
+                        }}
                         placeholder="Your answer..."
                         disabled={answers[q.id] === "__SKIPPED__"}
-                        className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
+                        rows={1}
+                        className="flex-1 resize-none overflow-hidden rounded-lg border border-white/[0.10] bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none disabled:bg-white/[0.03] disabled:text-white/30"
                       />
                       <button
                         onClick={() => handleForgotSkip(q.id)}
@@ -634,7 +724,7 @@ export default function ProfilePage({
 
       {/* App Helper tab content — kept mounted to preserve state */}
       <div className={activeTab === "apphelper" ? "flex-1" : "hidden"}>
-        <AppHelper profile={profile} />
+        <AppHelper profile={profile} profileId={profileId} loadedSession={loadedSession} onSessionLoaded={() => setLoadedSession(null)} />
       </div>
 
       {showResume && (
