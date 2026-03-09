@@ -203,6 +203,7 @@ interface AdvisorProfile {
     category: string;
     role?: string;
     description: string;
+    details?: string[];
     achievements?: string[];
     skills?: string[];
     yearsActive?: string;
@@ -233,6 +234,7 @@ function buildAdvisorSystemPrompt(profile: AdvisorProfile, pendingActions?: Pend
       const parts = [`• ${a.name} (${a.category})`];
       if (a.role) parts.push(`  Role: ${a.role}`);
       parts.push(`  ${a.description}`);
+      if (a.details?.length) parts.push(`  Details: ${a.details.join("; ")}`);
       if (a.achievements?.length) parts.push(`  Achievements: ${a.achievements.join(", ")}`);
       if (a.skills?.length) parts.push(`  Skills: ${a.skills.join(", ")}`);
       if (a.yearsActive) parts.push(`  Duration: ${a.yearsActive}`);
@@ -254,6 +256,8 @@ GOALS:
 ${goalsSection}
 
 RECOMMENDATION RULES (CRITICAL — NEVER VIOLATE THESE):
+- NEVER recommend an activity, role, or achievement the student ALREADY has. Before suggesting anything, check every activity in their profile above — including name, role, details, and achievements. If they already do case competitions, don't tell them to find case competitions. If they're already team captain, don't suggest becoming captain. If they already volunteer somewhere, don't suggest they start volunteering.
+- Instead, BUILD ON what they already do. Reference the existing activity by name and suggest the NEXT level — e.g. "you're already doing case comps which is great, the next step is to place at one or take a leadership role in organizing" instead of "you should try case competitions." Always frame advice as advancing from where they are, not starting from scratch.
 - NEVER mention a specific named program, competition, or organization by name. This means NO "DECA", NO "Junior Achievement", NO "FBLA", NO "HOSA", NO "Model UN", NO "Enactus" — none of them. You do not know what exists at the student's school or in their city. Instead, describe the TYPE of activity and tell them who to ask.
 - Good: "ask your school's business teacher if there are any business competitions against other schools you could enter"
 - Good: "email your school counselor and ask what entrepreneurship clubs or competitions other students have done"
