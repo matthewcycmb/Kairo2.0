@@ -1,7 +1,6 @@
 import { useState } from "react";
 import type { ParsedActivity } from "../types/activity";
 import { callApi } from "../lib/apiClient";
-import EditableField from "./EditableField";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface ActivityCardProps {
@@ -26,10 +25,27 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
   const [expandQuestions, setExpandQuestions] = useState<string[]>([]);
   const [expandAnswers, setExpandAnswers] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<ParsedActivity>(activity);
 
   const depth = getDepthScore(activity);
   const isShallow = depth < 3;
   const isRich = depth >= 5;
+
+  const startEditing = () => {
+    setDraft({ ...activity });
+    setEditing(true);
+  };
+
+  const saveEdits = () => {
+    setEditing(false);
+    onEdit(activity.id, draft);
+  };
+
+  const cancelEdits = () => {
+    setEditing(false);
+    setDraft(activity);
+  };
 
   const handleExpand = async () => {
     setLoading(true);
@@ -87,28 +103,77 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <EditableField
-            value={activity.name}
-            onSave={(name) => onEdit(activity.id, { name })}
-            className="text-lg font-bold text-white"
-            as="h3"
-          />
+          {editing ? (
+            <input
+              type="text"
+              value={draft.name}
+              onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+              className="w-full border-b-2 border-blue-400 bg-transparent text-lg font-bold text-white outline-none"
+            />
+          ) : (
+            <h3 className="text-lg font-bold text-white">{activity.name}</h3>
+          )}
         </div>
-        {activity.role && (
+        {editing ? (
+          <input
+            type="text"
+            value={draft.role || ""}
+            onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value || undefined }))}
+            placeholder="Role"
+            className="shrink-0 rounded-full border-b-2 border-blue-400 bg-transparent px-3 py-1 text-sm font-medium text-blue-300 outline-none placeholder:text-blue-300/40"
+          />
+        ) : activity.role ? (
           <span className="shrink-0 rounded-full bg-blue-500/20 px-3 py-1 text-sm font-medium text-blue-300">
             {activity.role}
           </span>
-        )}
+        ) : null}
       </div>
 
-      <EditableField
-        value={activity.description}
-        onSave={(description) => onEdit(activity.id, { description })}
-        className="text-base leading-relaxed text-white/70"
-        as="p"
-      />
+      {editing ? (
+        <textarea
+          value={draft.description}
+          onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+          rows={2}
+          className="w-full resize-none border-b-2 border-blue-400 bg-transparent text-base leading-relaxed text-white/70 outline-none"
+        />
+      ) : (
+        <p className="text-base leading-relaxed text-white/70">{activity.description}</p>
+      )}
 
-      {activity.details.length > 0 && (
+      {editing ? (
+        <div className="mt-2 space-y-1.5">
+          {draft.details.map((detail, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <span className="text-white/40">•</span>
+              <input
+                type="text"
+                value={detail}
+                onChange={(e) => {
+                  const newDetails = [...draft.details];
+                  newDetails[i] = e.target.value;
+                  setDraft((d) => ({ ...d, details: newDetails }));
+                }}
+                className="flex-1 border-b-2 border-blue-400 bg-transparent text-base leading-relaxed text-white/60 outline-none"
+              />
+              <button
+                onClick={() => {
+                  const newDetails = draft.details.filter((_, j) => j !== i);
+                  setDraft((d) => ({ ...d, details: newDetails }));
+                }}
+                className="shrink-0 text-sm text-white/30 hover:text-red-400"
+              >
+                x
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => setDraft((d) => ({ ...d, details: [...d.details, ""] }))}
+            className="text-sm text-white/40 hover:text-white/60"
+          >
+            + Add detail
+          </button>
+        </div>
+      ) : activity.details.length > 0 ? (
         <ul className="mt-2 space-y-1.5">
           {activity.details.map((detail, i) => (
             <li key={i} className="text-base leading-relaxed text-white/60 before:mr-1.5 before:content-['•']">
@@ -116,14 +181,66 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {editing ? (
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <input
+            type="text"
+            value={draft.yearsActive || ""}
+            onChange={(e) => setDraft((d) => ({ ...d, yearsActive: e.target.value || undefined }))}
+            placeholder="Years active (e.g. Grade 9-11)"
+            className="border-b-2 border-blue-400 bg-transparent text-sm text-white/40 outline-none placeholder:text-white/25"
+          />
+          <input
+            type="number"
+            value={draft.hoursPerWeek ?? ""}
+            onChange={(e) => setDraft((d) => ({ ...d, hoursPerWeek: e.target.value ? Number(e.target.value) : undefined }))}
+            placeholder="Hrs/week"
+            className="w-24 border-b-2 border-blue-400 bg-transparent text-sm text-white/40 outline-none placeholder:text-white/25"
+          />
+        </div>
+      ) : (
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/40">
+          {activity.yearsActive && <span>{activity.yearsActive}</span>}
+          {activity.hoursPerWeek && <span>{activity.hoursPerWeek} hrs/week</span>}
+        </div>
       )}
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/40">
-        {activity.yearsActive && <span>{activity.yearsActive}</span>}
-        {activity.hoursPerWeek && <span>{activity.hoursPerWeek} hrs/week</span>}
-      </div>
-
-      {activity.achievements && activity.achievements.length > 0 && (
+      {editing ? (
+        <div className="mt-2.5 space-y-1.5">
+          <p className="text-xs font-medium uppercase tracking-wider text-yellow-300/60">Achievements</p>
+          {(draft.achievements ?? []).map((ach, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={ach}
+                onChange={(e) => {
+                  const newAch = [...(draft.achievements ?? [])];
+                  newAch[i] = e.target.value;
+                  setDraft((d) => ({ ...d, achievements: newAch }));
+                }}
+                className="flex-1 border-b-2 border-blue-400 bg-transparent text-sm font-medium text-yellow-300 outline-none"
+              />
+              <button
+                onClick={() => {
+                  const newAch = (draft.achievements ?? []).filter((_, j) => j !== i);
+                  setDraft((d) => ({ ...d, achievements: newAch }));
+                }}
+                className="shrink-0 text-sm text-white/30 hover:text-red-400"
+              >
+                x
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => setDraft((d) => ({ ...d, achievements: [...(d.achievements ?? []), ""] }))}
+            className="text-sm text-white/40 hover:text-white/60"
+          >
+            + Add achievement
+          </button>
+        </div>
+      ) : activity.achievements && activity.achievements.length > 0 ? (
         <div className="mt-2.5 flex flex-wrap gap-2">
           {activity.achievements.map((achievement, i) => (
             <span
@@ -134,9 +251,42 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
             </span>
           ))}
         </div>
-      )}
+      ) : null}
 
-      {activity.skills && activity.skills.length > 0 && (
+      {editing ? (
+        <div className="mt-2.5 space-y-1.5">
+          <p className="text-xs font-medium uppercase tracking-wider text-white/40">Skills</p>
+          {(draft.skills ?? []).map((skill, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={skill}
+                onChange={(e) => {
+                  const newSkills = [...(draft.skills ?? [])];
+                  newSkills[i] = e.target.value;
+                  setDraft((d) => ({ ...d, skills: newSkills }));
+                }}
+                className="flex-1 border-b-2 border-blue-400 bg-transparent text-sm text-white/70 outline-none"
+              />
+              <button
+                onClick={() => {
+                  const newSkills = (draft.skills ?? []).filter((_, j) => j !== i);
+                  setDraft((d) => ({ ...d, skills: newSkills }));
+                }}
+                className="shrink-0 text-sm text-white/30 hover:text-red-400"
+              >
+                x
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => setDraft((d) => ({ ...d, skills: [...(d.skills ?? []), ""] }))}
+            className="text-sm text-white/40 hover:text-white/60"
+          >
+            + Add skill
+          </button>
+        </div>
+      ) : activity.skills && activity.skills.length > 0 ? (
         <div className="mt-2.5 flex flex-wrap gap-2">
           {activity.skills.map((skill, i) => (
             <span
@@ -147,9 +297,9 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
             </span>
           ))}
         </div>
-      )}
+      ) : null}
 
-      {isShallow && !expanding && !loading && (
+      {isShallow && !expanding && !loading && !editing && (
         <p className="mt-3 text-sm text-white/40 italic">
           This could be stronger — add more detail
         </p>
@@ -191,16 +341,43 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       )}
 
       {!expanding && !loading && (
-        <button
-          onClick={handleExpand}
-          className={
-            isShallow
-              ? "mt-3 w-full rounded-lg border border-white/[0.12] bg-white/[0.06] py-2.5 text-base font-medium text-white/80 transition-colors hover:bg-white/[0.12]"
-              : "mt-3 inline-flex items-center gap-1 rounded-full border border-white/[0.10] bg-white/[0.06] px-4 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/[0.12] hover:text-white/80"
-          }
-        >
-          {isShallow ? "Add more detail +" : isRich ? <>Expand this <span aria-hidden>→</span></> : <>Add more detail <span aria-hidden>→</span></>}
-        </button>
+        <div className="mt-3 flex items-center gap-2">
+          {editing ? (
+            <>
+              <button
+                onClick={saveEdits}
+                className="inline-flex items-center gap-1 rounded-full border border-white/[0.12] bg-white/[0.10] px-4 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.16]"
+              >
+                Save
+              </button>
+              <button
+                onClick={cancelEdits}
+                className="px-3 py-1.5 text-sm text-white/50 hover:text-white/70"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleExpand}
+                className={
+                  isShallow
+                    ? "flex-1 rounded-lg border border-white/[0.12] bg-white/[0.06] py-2.5 text-base font-medium text-white/80 transition-colors hover:bg-white/[0.12]"
+                    : "inline-flex items-center gap-1 rounded-full border border-white/[0.10] bg-white/[0.06] px-4 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/[0.12] hover:text-white/80"
+                }
+              >
+                {isShallow ? "Add more detail +" : isRich ? <>Expand this <span aria-hidden>→</span></> : <>Add more detail <span aria-hidden>→</span></>}
+              </button>
+              <button
+                onClick={startEditing}
+                className="inline-flex items-center gap-1 rounded-full border border-white/[0.10] bg-white/[0.06] px-4 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/[0.12] hover:text-white/80"
+              >
+                Edit
+              </button>
+            </>
+          )}
+        </div>
       )}
     </div>
   );

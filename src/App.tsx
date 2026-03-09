@@ -40,6 +40,7 @@ function App() {
   // Advisor state
   const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>(cachedProfile?.advisorMessages || []);
   const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [refreshingAnalysis, setRefreshingAnalysis] = useState(false);
   const [actionItems, setActionItems] = useState<ActionItem[]>(cachedProfile?.actionItems || []);
   const advisorInitRef = useRef(false);
 
@@ -386,7 +387,7 @@ function App() {
   };
 
   const handleRefreshAnalysis = async () => {
-    setAdvisorLoading(true);
+    setRefreshingAnalysis(true);
     try {
       const response = await callApi({
         type: "advisor",
@@ -401,10 +402,9 @@ function App() {
         content: response.message,
         timestamp: new Date().toISOString(),
         ...(response.analysis && { analysis: response.analysis }),
-        suggestions: response.suggestions,
       };
 
-      // Replace old analysis message, keep chat history
+      // Replace old analysis message, keep chat history and existing suggestions
       const chatOnly = advisorMessages.filter((m) => !m.analysis);
       const allMessages = [newAnalysisMsg, ...chatOnly];
       setAdvisorMessages(allMessages);
@@ -427,7 +427,7 @@ function App() {
     } catch (err) {
       console.error("Refresh analysis error:", err);
     } finally {
-      setAdvisorLoading(false);
+      setRefreshingAnalysis(false);
     }
   };
 
@@ -485,6 +485,7 @@ function App() {
           advisorMessages={advisorMessages}
           onAdvisorMessage={handleAdvisorMessage}
           advisorLoading={advisorLoading}
+          refreshingAnalysis={refreshingAnalysis}
           onAdvisorTabOpened={handleAdvisorTabOpened}
           onRefreshAnalysis={handleRefreshAnalysis}
           actionItems={actionItems}

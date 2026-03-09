@@ -34,6 +34,7 @@ interface AdvisorChatProps {
   advisorMessages: AdvisorMessage[];
   onNewMessage: (text: string) => void;
   isLoading: boolean;
+  isRefreshing: boolean;
   onRefreshAnalysis: () => void;
   actionItems: ActionItem[];
   onToggleActionItem: (id: string) => void;
@@ -43,6 +44,7 @@ export default function AdvisorChat({
   advisorMessages,
   onNewMessage,
   isLoading,
+  isRefreshing,
   onRefreshAnalysis,
   actionItems,
   onToggleActionItem,
@@ -151,15 +153,12 @@ export default function AdvisorChat({
                   <p className="text-base leading-snug text-white/80">
                     {item.action}
                   </p>
-                  <p className="mt-0.5 text-sm text-white/35">
-                    {item.gap}
-                  </p>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       onNewMessage(`Draft me a ready-to-copy message for this: "${item.action}". Put it in a code block.`);
                     }}
-                    className="mt-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/40 transition-colors hover:bg-white/[0.10] hover:text-white/70"
+                    className="mt-0.5 text-xs text-white/30 underline decoration-white/15 transition-colors hover:text-white/50"
                   >
                     Draft this for me
                   </button>
@@ -176,10 +175,10 @@ export default function AdvisorChat({
           <AdvisorAnalysisCard analysis={analysisMsg.analysis!} />
           <button
             onClick={onRefreshAnalysis}
-            disabled={isLoading}
+            disabled={isRefreshing || isLoading}
             className="mt-2 w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-2.5 text-sm font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70 disabled:opacity-40"
           >
-            {isLoading ? "Refreshing..." : "Refresh Analysis"}
+            {isRefreshing ? "Refreshing..." : "Refresh Analysis"}
           </button>
         </div>
       )}

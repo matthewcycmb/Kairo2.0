@@ -22,6 +22,7 @@ interface ProfilePageProps {
   advisorMessages: AdvisorMessage[];
   onAdvisorMessage: (text: string) => void;
   advisorLoading: boolean;
+  refreshingAnalysis: boolean;
   onAdvisorTabOpened: () => void;
   onRefreshAnalysis: () => void;
   actionItems: ActionItem[];
@@ -41,6 +42,7 @@ export default function ProfilePage({
   advisorMessages,
   onAdvisorMessage,
   advisorLoading,
+  refreshingAnalysis,
   onAdvisorTabOpened,
   onRefreshAnalysis,
   actionItems,
@@ -262,7 +264,7 @@ export default function ProfilePage({
             onClick={() => setShowResume(true)}
             className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
           >
-            Resume
+            Generate resume
           </button>
           <div className="relative">
             <button
@@ -382,7 +384,7 @@ export default function ProfilePage({
                   value={forgotText}
                   onChange={(e) => setForgotText(e.target.value)}
                   placeholder="e.g. just won 2nd at a case competition, started volunteering at the hospital..."
-                  rows={2}
+                  rows={4}
                   className="w-full resize-none rounded-lg border border-white/[0.15] bg-white/[0.05] p-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
                 />
                 <div className="flex gap-2">
@@ -506,6 +508,7 @@ export default function ProfilePage({
           advisorMessages={advisorMessages}
           onNewMessage={onAdvisorMessage}
           isLoading={advisorLoading}
+          isRefreshing={refreshingAnalysis}
           onRefreshAnalysis={onRefreshAnalysis}
           actionItems={actionItems}
           onToggleActionItem={onToggleActionItem}

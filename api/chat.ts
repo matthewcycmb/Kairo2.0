@@ -104,7 +104,7 @@ Respond with a JSON object in this exact format:
       "yearsActive": "e.g. Grade 9-11 or 2 years (if mentioned)",
       "role": "their role if mentioned",
       "achievements": ["Only standout accomplishments: awards, certifications, competitions, leadership titles"],
-      "skills": ["2-4 hard or soft skills inferred from this activity"],
+      "skills": ["2-4 concrete, resume-worthy skills inferred from this activity"],
       "hoursPerWeek": null,
       "isDetailedEnough": false
     }
@@ -128,7 +128,7 @@ Rules:
   - "hoursPerWeek": time commitment ONLY goes here (as a number)
   - "role": position/title ONLY goes here
   - "achievements": ONLY impressive accomplishments (awards, certs, competitions, ranks)
-  - "skills": 2-4 hard or soft skills inferred from the activity (e.g. "Public Speaking", "Python", "Teamwork", "Project Management")
+  - "skills": 2-4 concrete, resume-worthy skills someone could actually DO — things you'd tell an employer. Good: "public speaking", "video editing", "first aid certified", "Python", "event planning", "team leadership", "piano RCM Grade 7". Bad: "Competitive Mindset", "Individual Performance", "Time Management", "Dedication", "Hand-Eye Coordination", "Athletic Discipline". If it sounds like a motivational poster, it's not a skill. If it sounds like something you can demonstrate or prove, it is.
 - Set isDetailedEnough to true if the student gave enough info (role, duration, specifics)
 - Only generate follow-up questions for activities where isDetailedEnough is false
 - 2 questions max per activity
@@ -164,7 +164,7 @@ Respond with a JSON object in this exact format:
       "yearsActive": "updated if answered",
       "role": "updated if answered",
       "achievements": ["Only standout accomplishments: awards, certifications, competitions, leadership titles. NOT hours or duration."],
-      "skills": ["2-4 hard or soft skills inferred from the activity"],
+      "skills": ["2-4 concrete, resume-worthy skills inferred from the activity"],
       "hoursPerWeek": 5,
       "isDetailedEnough": true
     }
@@ -181,7 +181,7 @@ Rules:
   - "hoursPerWeek": time commitment ONLY goes here (as a number)
   - "role": position/title ONLY goes here
   - "achievements": ONLY impressive accomplishments (awards, certs, competitions, ranks)
-  - "skills": 2-4 hard or soft skills inferred from the activity
+  - "skills": 2-4 concrete, resume-worthy skills someone could actually DO — things you'd tell an employer. Good: "public speaking", "video editing", "first aid certified", "Python", "event planning", "team leadership". Bad: "Competitive Mindset", "Individual Performance", "Time Management", "Dedication", "Athletic Discipline". If it sounds like a motivational poster, it's not a skill.
 - Set followUpQuestions to an empty array — no more questions
 - Return ALL activities (even ones that weren't asked about), not just updated ones`;
 }
@@ -314,7 +314,7 @@ function buildAdvisorUserPrompt(
     "A specific gap or area to strengthen relative to their targets — 1 sentence each",
     "Another gap — max 3 items"
   ],
-  "actionStep": "One concrete, specific action they can take this week. Must name WHO to talk to or WHERE to go — e.g. 'ask your math teacher about...' or 'go to your school counselor and ask...' Never say 'research' or 'look into'.",
+  "actionStep": "One short sentence — max 15 words. e.g. 'Ask your physics teacher about robotics clubs this week.' Must name WHO to talk to or WHERE to go. Never say 'research' or 'look into'.",
   "actionGap": "Which gap this action addresses — match one of the gaps above",
   "suggestions": [
     "A contextual follow-up question the student might want to ask — 2-3 items",
@@ -325,7 +325,7 @@ function buildAdvisorUserPrompt(
 Rules:
 - Each strength must reference a specific activity from their profile by name
 - Each gap should be specific to their target universities/programs if set
-- The action step must be immediately actionable (this week) — name a specific person to talk to or place to go, never tell them to "research" or "look into" something
+- The action step must be ONE short sentence (max 15 words), immediately actionable this week — name a specific person to talk to or place to go, never say "research" or "look into"
 - NEVER name a specific program, competition, or organization (no DECA, no FBLA, no Junior Achievement, etc). Instead say "ask your teacher if there's a business club" or "ask your counselor about competitions against other schools"
 - actionGap should be a short label for which gap the action step addresses
 - suggestions should be 2-3 natural follow-up questions the student might ask next, based on the analysis (e.g. "What competitions should I enter for robotics?" or "How do I strengthen my volunteering?")
@@ -349,7 +349,7 @@ Respond with a JSON object in this exact format:
 {
   "message": "Your response with markdown formatting. Use \\n\\n between paragraphs. Use **bold** for emphasis. Use numbered lists (1. 2. 3.) on separate lines when listing multiple points.",
   "suggestions": ["A follow-up question the student might ask next", "Another contextual suggestion"],
-  "actionItems": [{"action": "A specific action step if your response includes one", "gap": "Which gap or area this addresses"}]
+  "actionItems": [{"action": "One short sentence, max 15 words — e.g. 'Ask your art teacher about portfolio reviews this week.'", "gap": "short label"}]
 }
 
 Rules:
@@ -456,7 +456,7 @@ Respond with JSON containing the full updated activity:
     "yearsActive": "...",
     "role": "...",
     "achievements": ["Only standout accomplishments"],
-    "skills": ["2-4 hard or soft skills — update/refine based on the deeper answers"],
+    "skills": ["2-4 concrete, resume-worthy skills — update/refine based on the deeper answers"],
     "hoursPerWeek": null,
     "isDetailedEnough": true
   }
@@ -466,7 +466,7 @@ Rules:
 - Weave the answers into a richer description and details
 - Do NOT duplicate info across fields
 - Keep all existing info, just make it deeper
-- Update or refine the skills list based on what the deeper answers reveal`;
+- Update or refine the skills list based on what the deeper answers reveal. Only include concrete, demonstrable skills — things you could tell an employer you can DO (e.g. "public speaking", "video editing", "Python", "event planning"). Never include vague traits like "Competitive Mindset", "Dedication", or "Time Management".`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
