@@ -183,57 +183,61 @@ export default function ResumeModal({ profile, onClose }: ResumeModalProps) {
 
           if (useTwoColumns) {
             return (
-              <div className="flex flex-col gap-6 md:flex-row md:gap-8">
-                <div className="flex-1 min-w-0 space-y-5">
-                  {activitiesAndLeadership.length > 0 && (
-                    <Section title="Activities & Leadership">
-                      {activitiesAndLeadership.map((a) => (
-                        <ActivityLine key={a.id} name={a.name} role={a.role} description={a.description} />
-                      ))}
-                    </Section>
-                  )}
-                  {volunteering.length > 0 && (
-                    <Section title="Volunteering & Community">
-                      {volunteering.map((a) => (
-                        <ActivityLine key={a.id} name={a.name} role={a.role} description={a.description} />
-                      ))}
-                    </Section>
+              <div className="space-y-5">
+                {/* Two-column: Activities | Achievements */}
+                <div className="flex flex-col gap-6 md:flex-row md:gap-8">
+                  <div className="flex-1 min-w-0 space-y-5">
+                    {activitiesAndLeadership.length > 0 && (
+                      <Section title="Activities & Leadership">
+                        {activitiesAndLeadership.map((a) => (
+                          <ActivityLine key={a.id} name={a.name} role={a.role} description={a.description} />
+                        ))}
+                      </Section>
+                    )}
+                    {volunteering.length > 0 && (
+                      <Section title="Volunteering & Community">
+                        {volunteering.map((a) => (
+                          <ActivityLine key={a.id} name={a.name} role={a.role} description={a.description} />
+                        ))}
+                      </Section>
+                    )}
+                  </div>
+                  {allAchievements.length > 0 && (
+                    <div className="md:w-[38%] space-y-5">
+                      <Section title="Achievements">
+                        <ul className="space-y-1">
+                          {allAchievements.map((ach, i) => (
+                            <li key={i} className="text-sm text-white/60">
+                              <span className="mr-1.5 text-white/25">&bull;</span>
+                              {ach.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </Section>
+                    </div>
                   )}
                 </div>
-                <div className="md:w-[38%] space-y-5">
-                  {allAchievements.length > 0 && (
-                    <Section title="Achievements">
-                      <ul className="space-y-1">
-                        {allAchievements.map((ach, i) => (
-                          <li key={i} className="text-sm text-white/60">
-                            <span className="mr-1.5 text-white/25">&bull;</span>
-                            {ach.text}
-                          </li>
-                        ))}
-                      </ul>
-                    </Section>
-                  )}
-                  {allSkills.length > 0 && (
-                    <Section title="Skills">
-                      <p className="text-sm capitalize leading-relaxed text-white/60">
-                        {allSkills.join(", ")}
-                      </p>
-                    </Section>
-                  )}
-                  <Section title="Education">
-                    <p className="text-sm text-white/60">
-                      <EditableField
-                        value={fields.school}
-                        placeholder="School Name"
-                        onChange={(v) => updateField("school", v)}
-                        className="text-sm font-semibold text-white/80"
-                      />
-                      {profile.goals?.grade && (
-                        <span> &mdash; Grade {profile.goals.grade}</span>
-                      )}
+                {/* Full-width: Skills + Education */}
+                {allSkills.length > 0 && (
+                  <Section title="Skills">
+                    <p className="text-sm capitalize leading-relaxed text-white/60">
+                      {allSkills.join(", ")}
                     </p>
                   </Section>
-                </div>
+                )}
+                <Section title="Education">
+                  <p className="text-sm text-white/60">
+                    <EditableField
+                      value={fields.school}
+                      placeholder="School Name"
+                      onChange={(v) => updateField("school", v)}
+                      className="text-sm font-semibold text-white/80"
+                    />
+                    {profile.goals?.grade && (
+                      <span> &mdash; Grade {profile.goals.grade}</span>
+                    )}
+                  </p>
+                </Section>
               </div>
             );
           }
