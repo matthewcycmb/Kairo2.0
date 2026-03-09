@@ -280,14 +280,15 @@ TONE:
 
 FORMATTING:
 - Use markdown formatting in the "message" field. Use **bold** for key terms and emphasis.
-- When listing multiple points, use numbered lists (1. 2. 3.) with each item on its own line.
-- Add blank lines between paragraphs and before/after lists so the response is easy to scan.
-- Never write one giant wall of text — break things up into short, readable chunks.
+- Keep responses conversational but scannable. Use short paragraphs of 1-2 sentences for context and transitions. When giving specific advice, lists, or action steps, use bullet points.
+- Never write more than 3 sentences in a row without a visual break — either a new paragraph or a bullet list.
+- The structure should be easy to scan on a phone screen.
+- Don't force everything into bullets — the mix of short paragraphs and occasional bullet lists is what makes it feel like a smart friend talking, not a generic AI output.
 
 Rules:
 - Always reference the student's actual activities by name — never give generic advice
 - Maximum 3 action items per response
-- Keep responses concise and conversational — no bullet-point walls, no numbered lists unless asked
+- Keep the overall response concise — say more with fewer words. Cut filler and fluff.
 - If the student asks something outside your scope, gently redirect to extracurricular/university planning
 ${pendingActions?.length ? `
 PENDING ACTION ITEMS (the student currently has these outstanding):
@@ -309,7 +310,7 @@ function buildAdvisorUserPrompt(
 2. What's missing or could be stronger (relative to their target universities/programs if set)
 3. One concrete action step they can do this week (name WHO to talk to or WHERE to go)
 
-This is a CHAT MESSAGE, not a report. Write it like you're texting a friend — casual, direct, and warm. Start with a greeting. Weave the analysis naturally into conversation. Don't use headers, bullet points, or numbered lists. Just talk to them in 2-4 short paragraphs.
+This is a CHAT MESSAGE, not a report. Write it like you're texting a friend — casual, direct, and warm. Start with a short greeting (1-2 sentences). Then mix short paragraphs with bullet points — use paragraphs for context and transitions, bullets for specific advice or action steps. Never write more than 3 sentences without a visual break. Keep it scannable on a phone screen but packed with substance.
 
 Respond with a JSON object in this exact format:
 {
@@ -345,8 +346,8 @@ Respond with a JSON object in this exact format:
 }
 
 Rules:
-- "message" is your conversational response — keep it concise and natural
-- CRITICAL FORMATTING: The "message" field MUST use \\n\\n to separate paragraphs and ideas. Never write a wall of text. Break your response into 2-4 short paragraphs. Use **bold** for key terms. If listing multiple points, use a numbered list with each item on its own line (1. First\\n2. Second\\n3. Third).
+- "message" is your conversational response — keep it concise and punchy
+- CRITICAL FORMATTING: Mix short paragraphs (1-2 sentences) with bullet points. Use paragraphs for context and transitions, bullets for specific advice or action steps. Never write more than 3 sentences without a visual break. Use **bold** for key terms. Use \\n\\n between sections. Don't force everything into bullets — the mix of paragraphs and bullets should feel like a smart friend talking.
 - "suggestions" should be 2-3 contextual follow-up questions the student might want to ask, based on what you just discussed
 - "actionItems" should only be included if your response gives a specific, actionable recommendation. Omit or use an empty array if you're just answering a question without recommending an action. Each item needs an "action" (what to do) and "gap" (which area it strengthens).
 - Return ONLY valid JSON, no extra text`;
@@ -609,9 +610,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).send("Invalid request type");
     }
 
-    // Use Haiku for lightweight tasks (expand questions, merge answers) to save costs
+    // Use Haiku for structured extraction/generation tasks to save costs
+    // Only app-helper generate and advisor need Sonnet for writing quality
+    const isSonnetTask = false; // parse, followup, expand, expand-answer all use Haiku
     const isLightTask = body.type === "expand" || body.type === "expand-answer";
-    const model = isLightTask ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-5-20250929";
+    const model = isSonnetTask ? "claude-sonnet-4-5-20250929" : "claude-haiku-4-5-20251001";
     const maxTokens = isLightTask ? 1024 : 4096;
 
     const message = await anthropic.messages.create({
