@@ -124,17 +124,6 @@ body::before {
     print-color-adjust: exact !important;
   }
 
-  /* Two-column layout in print */
-  .resume-print-clone .flex.flex-col.md\:flex-row {
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 1.5rem !important;
-  }
-
-  .resume-print-clone .md\:w-\[38\%\] {
-    width: 38% !important;
-  }
-
   /* Hide toolbar in print */
   .resume-print-clone .print\:hidden {
     display: none !important;
