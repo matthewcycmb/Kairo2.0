@@ -538,6 +538,7 @@ export default function ProfilePage({
           advisorMessages={advisorMessages}
           onNewMessage={onAdvisorMessage}
           isLoading={advisorLoading}
+          isRefreshing={refreshingAnalysis}
           actionItems={actionItems}
           onToggleActionItem={onToggleActionItem}
         />

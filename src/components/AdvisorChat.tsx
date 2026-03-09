@@ -33,6 +33,7 @@ interface AdvisorChatProps {
   advisorMessages: AdvisorMessage[];
   onNewMessage: (text: string) => void;
   isLoading: boolean;
+  isRefreshing: boolean;
   actionItems: ActionItem[];
   onToggleActionItem: (id: string) => void;
 }
@@ -41,6 +42,7 @@ export default function AdvisorChat({
   advisorMessages,
   onNewMessage,
   isLoading,
+  isRefreshing,
   actionItems,
   onToggleActionItem,
 }: AdvisorChatProps) {
@@ -162,9 +164,15 @@ export default function AdvisorChat({
 
       {/* Messages area */}
       <div className="flex-1 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
-        {advisorMessages.length === 0 && !isLoading && (
+        {advisorMessages.length === 0 && !isLoading && !isRefreshing && (
           <div className="flex h-full items-center justify-center py-12">
             <p className="text-base text-white/40">Your advisor is getting ready...</p>
+          </div>
+        )}
+
+        {isRefreshing && (
+          <div className="flex h-full items-center justify-center py-12">
+            <p className="animate-pulse text-base text-white/50">Refreshing analysis...</p>
           </div>
         )}
 
