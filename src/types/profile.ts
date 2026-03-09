@@ -51,12 +51,22 @@ export interface ConversationSummary {
   timestamp: string;
 }
 
+export interface AppHelperSessionData {
+  id: string;
+  question: string;
+  clarifyQuestions: string[];
+  clarifyAnswers: Record<number, string>;
+  answer: string;
+  timestamp: string;
+}
+
 export interface StudentProfile {
   activities: ParsedActivity[];
   lastUpdated: Date;
   goals?: StudentGoals;
   advisorMessages?: AdvisorMessage[];
   actionItems?: ActionItem[];
+  appHelperSessions?: AppHelperSessionData[];
 }
 
 export interface FollowUpRound {

@@ -305,25 +305,43 @@ function buildAdvisorUserPrompt(
   pendingActions?: PendingAction[]
 ): string {
   if (isFirstMessage) {
-    return `This is your first time talking to the student. Send them an opening message that covers:
-1. What's strong about their profile (reference specific activities by name)
-2. What's missing or could be stronger (relative to their target universities/programs if set)
-3. One concrete action step they can do this week (name WHO to talk to or WHERE to go)
+    return `This is your first time talking to the student. Keep the opening message under 200 words. Write in short conversational paragraphs — NO bullet points, NO numbered lists, NO section headers in this opening message.
 
-This is a CHAT MESSAGE, not a report. Write it like you're texting a friend — casual, direct, and warm. Start with a short greeting (1-2 sentences). Then mix short paragraphs with bullet points — use paragraphs for context and transitions, bullets for specific advice or action steps. Never write more than 3 sentences without a visual break. Keep it scannable on a phone screen but packed with substance.
+Follow this EXACT structure — five paragraphs, no bullet points, conversational only:
+
+PARAGRAPH 1 (2-3 sentences): Casual greeting + compliment their STRONGEST activity. Reference a specific metric or detail from their profile (a number, an achievement, user feedback — something concrete). Then explain in one sentence WHY this matters for university admissions. Don't say "impressive" or "really strong" — show don't tell.
+
+PARAGRAPH 2 (2-3 sentences): Compliment a SECOND strength from a DIFFERENT category than paragraph 1. Again, reference a specific detail. Keep it short — this shows you've read their full profile, not just one activity.
+
+PARAGRAPH 3 (2-3 sentences): The biggest gap. Start with "Honestly?" or "Real talk —" to signal directness. Frame it as an honest observation, not a criticism. Use a specific contrast: "your profile says X about you, but the programs you're targeting want to see Y." Use plain language — "you need something that shows you actually ran a business, not just competed in one" not "you need to demonstrate entrepreneurial leadership."
+
+PARAGRAPH 4 (2-3 sentences): ONLY include this if their activities genuinely suggest a better-fitting program than what they've targeted. Say it directly: "Have you thought about [type of program] instead? Your [specific activities] align way more naturally there." If their activities DO match their target programs well, SKIP this paragraph entirely.
+
+PARAGRAPH 5 (action step — this should be the longest paragraph, 5-7 sentences): Never just say "talk to someone." Follow this structure exactly:
+- First, name which EXISTING activity or project the student should BUILD ON — not start something new. E.g. "Take Kairo and turn it into an actual student startup" not "start a business."
+- Then explain why this works by connecting to their existing validation — e.g. "you already have users saying it's useful — that's real validation."
+- Give 2-3 specific next moves they can take THIS WEEK, each concrete — e.g. "talk to your business teacher, ask about entrepreneurship programs, pitch competitions, or mentorship opportunities in your district."
+- Include a word-for-word script: "Frame it as: 'I built this tool students are using, I want to turn it into something bigger — what resources exist for that?'"
+- End with one sentence explaining how this action closes their biggest gap — e.g. "That gives you the business leadership depth you're missing while leveraging what you're already great at."
+
+Every sentence should feel like it could only be written for THIS specific student. If you could swap in a different student's name and the sentence still works, rewrite it.
+
+Total length: 250-350 words. Save deeper analysis for follow-ups. Suggestions should tee up topics you didn't cover.
 
 Respond with a JSON object in this exact format:
 {
-  "message": "Your conversational opening message with markdown formatting. Use \\n\\n between paragraphs. Use **bold** for emphasis on key terms.",
+  "message": "Your conversational opening message. Use \\n\\n between paragraphs. Use **bold** for emphasis. NO bullet points or lists.",
   "suggestions": ["A follow-up question the student might want to ask — 2-3 items", "Another contextual question"],
-  "actionItems": [{"action": "One short sentence, max 15 words — e.g. 'Ask your art teacher about portfolio reviews this week.'", "gap": "short label for which area this strengthens"}]
+  "actionItems": [{"action": "One short sentence, max 15 words", "gap": "short label for which area this strengthens"}]
 }
 
 Rules:
-- Reference the student's actual activities by name — never give generic advice
+- UNDER 200 WORDS for the message. Say less, save the rest for follow-ups.
+- Reference the student's actual activities by name with specific details — never give generic advice
 - NEVER name a specific program, competition, or organization (no DECA, no FBLA, no Junior Achievement, etc). Instead describe the TYPE of activity and tell them who to ask.
+- NEVER use academic jargon — no "demonstrated", "measurable", "at scale", "co-curricular", "inter-school". Use words a student would actually say.
 - The action step must be immediately actionable this week — name a specific person to talk to or place to go, never say "research" or "look into"
-- suggestions should be 2-3 natural follow-up questions the student might ask next
+- suggestions should be 2-3 follow-up questions that tee up deeper topics you DIDN'T cover (other gaps, program fit, strategy)
 - Return ONLY valid JSON, no extra text`;
   }
 

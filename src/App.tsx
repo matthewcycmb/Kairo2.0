@@ -45,8 +45,8 @@ function App() {
   const [refreshingAnalysis, setRefreshingAnalysis] = useState(false);
   const [refreshingProfile, setRefreshingProfile] = useState(false);
   const [actionItems, setActionItems] = useState<ActionItem[]>(cachedProfile?.actionItems || []);
-  const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID());
-  const [latestConvId, setLatestConvId] = useState<string>(conversationId);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [latestConvId, setLatestConvId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const latestConvMessagesRef = useRef<AdvisorMessage[]>([]);
   const advisorInitRef = useRef(false);
@@ -197,7 +197,7 @@ function App() {
       role: "user",
       content: userText,
       timestamp: new Date().toISOString(),
-      conversationId,
+      conversationId: conversationId ?? undefined,
     };
 
     const updatedMessages = [...advisorMessages, userMsg];
@@ -227,7 +227,7 @@ function App() {
         content: messageText,
         timestamp: new Date().toISOString(),
         suggestions: response.suggestions,
-        conversationId,
+        conversationId: conversationId ?? undefined,
       };
 
       const allMessages = [...updatedMessages, assistantMsg];
@@ -244,7 +244,7 @@ function App() {
       if (profileId) {
         const newItems = finalItems.filter((item) => !updatedItems.some((old) => old.id === item.id));
         await Promise.all([
-          saveAdvisorMessages(profileId, [userMsg, assistantMsg], conversationId).catch(console.error),
+          saveAdvisorMessages(profileId, [userMsg, assistantMsg], conversationId ?? undefined).catch(console.error),
           newItems.length > 0
             ? saveActionItems(profileId, newItems).catch(console.error)
             : Promise.resolve(),
@@ -323,7 +323,8 @@ function App() {
           setLatestConvId(existingConvId);
         } else {
           // Legacy messages without conversationId — assign one and re-save
-          const newConvId = conversationId;
+          const newConvId = crypto.randomUUID();
+          setConversationId(newConvId);
           setLatestConvId(newConvId);
           const tagged = loadedMessages.map((m) => ({ ...m, conversationId: newConvId }));
           loadedMessages = tagged;
@@ -338,6 +339,10 @@ function App() {
       }
 
       // Step 3: No messages at all → generate fresh analysis (show spinner)
+      const newConvId = crypto.randomUUID();
+      setConversationId(newConvId);
+      setLatestConvId(newConvId);
+
       setAdvisorLoading(true);
       const response = await callApi({
         type: "advisor",
@@ -352,7 +357,7 @@ function App() {
         content: response.message,
         timestamp: new Date().toISOString(),
         suggestions: response.suggestions,
-        conversationId,
+        conversationId: newConvId,
       };
 
       setAdvisorMessages([firstMsg]);
@@ -363,7 +368,7 @@ function App() {
       // Persist to Supabase — await so data is saved before user can close tab
       if (profileId) {
         await Promise.all([
-          saveAdvisorMessages(profileId, [firstMsg], conversationId).catch(console.error),
+          saveAdvisorMessages(profileId, [firstMsg], newConvId).catch(console.error),
           updatedItems.length > 0
             ? saveActionItems(profileId, updatedItems).catch(console.error)
             : Promise.resolve(),
@@ -603,6 +608,16 @@ function App() {
           conversations={conversations}
           onListConversations={handleListConversations}
           isViewingPrevious={conversationId !== latestConvId}
+          onAppHelperSessionsChanged={(sessions) => {
+            setProfile((prev) => {
+              const next = { ...prev, appHelperSessions: sessions, lastUpdated: new Date() };
+              if (profileId) {
+                try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
+                updateProfile(profileId, next).catch(console.error);
+              }
+              return next;
+            });
+          }}
         />
       )}
       <Analytics />

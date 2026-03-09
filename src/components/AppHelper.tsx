@@ -1,28 +1,22 @@
 import { useState, useEffect } from "react";
-import type { StudentProfile } from "../types/profile";
+import type { StudentProfile, AppHelperSessionData } from "../types/profile";
 import { callApi } from "../lib/apiClient";
 
-interface AppHelperSession {
-  id: string;
-  question: string;
-  clarifyQuestions: string[];
-  clarifyAnswers: Record<number, string>;
-  answer: string;
-  timestamp: string;
-}
+type AppHelperSession = AppHelperSessionData;
 
 interface AppHelperProps {
   profile: StudentProfile;
   profileId: string | null;
   loadedSession?: AppHelperSession | null;
   onSessionLoaded?: () => void;
+  onSessionsChanged?: (sessions: AppHelperSession[]) => void;
 }
 
 function getStorageKey(profileId: string) {
   return `kairo-apphelper-sessions-${profileId}`;
 }
 
-function loadSessions(profileId: string | null): AppHelperSession[] {
+function loadSessionsFromStorage(profileId: string | null): AppHelperSession[] {
   if (!profileId) return [];
   try {
     const saved = localStorage.getItem(getStorageKey(profileId));
@@ -33,14 +27,21 @@ function loadSessions(profileId: string | null): AppHelperSession[] {
   return [];
 }
 
-function saveSessions(profileId: string | null, sessions: AppHelperSession[]) {
+function mergeSessions(local: AppHelperSession[], blob: AppHelperSession[]): AppHelperSession[] {
+  const byId = new Map<string, AppHelperSession>();
+  for (const s of blob) byId.set(s.id, s);
+  for (const s of local) byId.set(s.id, s); // local wins on conflict
+  return Array.from(byId.values()).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+}
+
+function saveSessionsToStorage(profileId: string | null, sessions: AppHelperSession[]) {
   if (!profileId) return;
   localStorage.setItem(getStorageKey(profileId), JSON.stringify(sessions));
 }
 
 export { type AppHelperSession };
 
-export default function AppHelper({ profile, profileId, loadedSession, onSessionLoaded }: AppHelperProps) {
+export default function AppHelper({ profile, profileId, loadedSession, onSessionLoaded, onSessionsChanged }: AppHelperProps) {
   const [question, setQuestion] = useState("");
   const [step, setStep] = useState<"question" | "clarify" | "answer">("question");
   const [clarifyQuestions, setClarifyQuestions] = useState<string[]>([]);
@@ -51,12 +52,23 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [editingAnswer, setEditingAnswer] = useState(false);
-  const [sessions, setSessions] = useState<AppHelperSession[]>(() => loadSessions(profileId));
+  const [sessions, setSessions] = useState<AppHelperSession[]>(() => {
+    const local = loadSessionsFromStorage(profileId);
+    const blob = profile.appHelperSessions || [];
+    return mergeSessions(local, blob);
+  });
 
-  // Re-load sessions when profileId changes
+  // Re-load sessions when profileId changes — merge localStorage + profile blob
   useEffect(() => {
-    setSessions(loadSessions(profileId));
-  }, [profileId]);
+    const local = loadSessionsFromStorage(profileId);
+    const blob = profile.appHelperSessions || [];
+    const merged = mergeSessions(local, blob);
+    setSessions(merged);
+    // Backfill localStorage if blob had sessions localStorage didn't
+    if (merged.length > local.length) {
+      saveSessionsToStorage(profileId, merged);
+    }
+  }, [profileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load session from parent
   useEffect(() => {
@@ -129,7 +141,8 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
         };
         const updated = [session, ...sessions];
         setSessions(updated);
-        saveSessions(profileId, updated);
+        saveSessionsToStorage(profileId, updated);
+        onSessionsChanged?.(updated);
       } else {
         setError("Couldn't generate an answer. Try again.");
       }

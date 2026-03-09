@@ -50,6 +50,7 @@ interface ProfilePageProps {
   conversations: ConversationSummary[];
   onListConversations: () => void;
   isViewingPrevious: boolean;
+  onAppHelperSessionsChanged?: (sessions: AppHelperSession[]) => void;
 }
 
 export default function ProfilePage({
@@ -76,6 +77,7 @@ export default function ProfilePage({
   conversations,
   onListConversations,
   isViewingPrevious,
+  onAppHelperSessionsChanged,
 }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState<"profile" | "advisor" | "apphelper">("profile");
   const [forgotStep, setForgotStep] = useState<"idle" | "input" | "followup">("idle");
@@ -114,8 +116,9 @@ export default function ProfilePage({
     const updated = appHelperSessions.filter((s) => s.id !== sessionId);
     localStorage.setItem(appHelperStorageKey, JSON.stringify(updated));
     setAppHelperSessions(updated);
+    onAppHelperSessionsChanged?.(updated);
     if (loadedSession?.id === sessionId) setLoadedSession(null);
-  }, [appHelperStorageKey, appHelperSessions, loadedSession]);
+  }, [appHelperStorageKey, appHelperSessions, loadedSession, onAppHelperSessionsChanged]);
 
   const grouped = groupByCategory(profile.activities);
 
@@ -914,7 +917,7 @@ export default function ProfilePage({
 
       {/* App Helper tab content — kept mounted to preserve state */}
       <div className={activeTab === "apphelper" ? "flex-1" : "hidden"}>
-        <AppHelper profile={profile} profileId={profileId} loadedSession={loadedSession} onSessionLoaded={() => setLoadedSession(null)} />
+        <AppHelper profile={profile} profileId={profileId} loadedSession={loadedSession} onSessionLoaded={() => setLoadedSession(null)} onSessionsChanged={onAppHelperSessionsChanged} />
       </div>
 
       {showResume && (
