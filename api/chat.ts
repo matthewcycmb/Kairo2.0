@@ -274,19 +274,16 @@ TONE:
 - Don't hedge everything. If something is a good idea, just say it's a good idea.
 - No corporate-speak. "Leverage your leadership experience" = bad. "You're already leading the robotics team, so use that" = good.
 
-FORMATTING (for follow-up chat messages only, NOT for the first JSON analysis):
+FORMATTING:
 - Use markdown formatting in the "message" field. Use **bold** for key terms and emphasis.
 - When listing multiple points, use numbered lists (1. 2. 3.) with each item on its own line.
 - Add blank lines between paragraphs and before/after lists so the response is easy to scan.
 - Never write one giant wall of text — break things up into short, readable chunks.
-- IMPORTANT: The first analysis response (strengths, gaps, actionStep) must use plain text only — no markdown, no **bold**, no *italics*.
 
 Rules:
 - Always reference the student's actual activities by name — never give generic advice
 - Maximum 3 action items per response
 - Keep responses concise and conversational — no bullet-point walls, no numbered lists unless asked
-- For follow-up messages, respond in plain conversational text
-- For the first analysis, respond in JSON as instructed
 - If the student asks something outside your scope, gently redirect to extracurricular/university planning
 ${pendingActions?.length ? `
 PENDING ACTION ITEMS (the student currently has these outstanding):
@@ -303,34 +300,25 @@ function buildAdvisorUserPrompt(
   pendingActions?: PendingAction[]
 ): string {
   if (isFirstMessage) {
-    return `This is your first analysis of the student's profile. Respond with a JSON object in this exact format:
+    return `This is your first time talking to the student. Send them an opening message that covers:
+1. What's strong about their profile (reference specific activities by name)
+2. What's missing or could be stronger (relative to their target universities/programs if set)
+3. One concrete action step they can do this week (name WHO to talk to or WHERE to go)
 
+This is a CHAT MESSAGE, not a report. Write it like you're texting a friend — casual, direct, and warm. Start with a greeting. Weave the analysis naturally into conversation. Don't use headers, bullet points, or numbered lists. Just talk to them in 2-4 short paragraphs.
+
+Respond with a JSON object in this exact format:
 {
-  "strengths": [
-    "A specific strength citing an activity by name — 1 sentence each",
-    "Another strength — max 3 items"
-  ],
-  "gaps": [
-    "A specific gap or area to strengthen relative to their targets — 1 sentence each",
-    "Another gap — max 3 items"
-  ],
-  "actionStep": "One short sentence — max 15 words. e.g. 'Ask your physics teacher about robotics clubs this week.' Must name WHO to talk to or WHERE to go. Never say 'research' or 'look into'.",
-  "actionGap": "Which gap this action addresses — match one of the gaps above",
-  "suggestions": [
-    "A contextual follow-up question the student might want to ask — 2-3 items",
-    "Another question based on the analysis"
-  ]
+  "message": "Your conversational opening message with markdown formatting. Use \\n\\n between paragraphs. Use **bold** for emphasis on key terms.",
+  "suggestions": ["A follow-up question the student might want to ask — 2-3 items", "Another contextual question"],
+  "actionItems": [{"action": "One short sentence, max 15 words — e.g. 'Ask your art teacher about portfolio reviews this week.'", "gap": "short label for which area this strengthens"}]
 }
 
 Rules:
-- Each strength must reference a specific activity from their profile by name
-- Each gap should be specific to their target universities/programs if set
-- The action step must be ONE short sentence (max 15 words), immediately actionable this week — name a specific person to talk to or place to go, never say "research" or "look into"
-- NEVER name a specific program, competition, or organization (no DECA, no FBLA, no Junior Achievement, etc). Instead say "ask your teacher if there's a business club" or "ask your counselor about competitions against other schools"
-- actionGap should be a short label for which gap the action step addresses
-- suggestions should be 2-3 natural follow-up questions the student might ask next, based on the analysis (e.g. "What competitions should I enter for robotics?" or "How do I strengthen my volunteering?")
-- Keep each item to 1 concise sentence
-- Do NOT use markdown formatting (no **bold**, no *italics*, no bullet points) inside JSON string values — use plain text only
+- Reference the student's actual activities by name — never give generic advice
+- NEVER name a specific program, competition, or organization (no DECA, no FBLA, no Junior Achievement, etc). Instead describe the TYPE of activity and tell them who to ask.
+- The action step must be immediately actionable this week — name a specific person to talk to or place to go, never say "research" or "look into"
+- suggestions should be 2-3 natural follow-up questions the student might ask next
 - Return ONLY valid JSON, no extra text`;
   }
 
@@ -585,33 +573,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const cleaned = advisorTextBlock.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
 
-      if (body.isFirstMessage) {
-        try {
-          const parsed = JSON.parse(cleaned);
-          const analysis = {
-            strengths: parsed.strengths || [],
-            gaps: parsed.gaps || [],
-            actionStep: parsed.actionStep || "",
-          };
-          // Build a plain-text fallback for the content field
-          const message = [
-            ...analysis.strengths.map((s: string) => `Strength: ${s}`),
-            ...analysis.gaps.map((g: string) => `Gap: ${g}`),
-            `Action: ${analysis.actionStep}`,
-          ].join("\n");
-          const suggestions = parsed.suggestions || [];
-          const actionItems = parsed.actionStep
-            ? [{ action: parsed.actionStep, gap: parsed.actionGap || parsed.gaps?.[0] || "" }]
-            : [];
-          return res.status(200).json({ message, analysis, suggestions, actionItems });
-        } catch {
-          // JSON parse failed — strip any remaining JSON-like artifacts and return as plain text
-          const fallback = cleaned.replace(/[{}[\]"]/g, "").trim();
-          return res.status(200).json({ message: fallback || "I had trouble formatting my response. Try asking again!" });
-        }
-      }
-
-      // Follow-up messages: try JSON, fall back to plain text
+      // Both first and follow-up messages use the same response format
       try {
         const parsed = JSON.parse(cleaned);
         // Ensure message is a string, not a nested object

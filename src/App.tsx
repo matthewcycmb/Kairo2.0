@@ -8,6 +8,7 @@ import ProfilePage from "./pages/ProfilePage";
 import GoalSetupPage from "./pages/GoalSetupPage";
 import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, saveActionItems, loadActionItems, updateActionItem } from "./lib/profileApi";
 import { callApi } from "./lib/apiClient";
+import { formatProfileAsText } from "./lib/profileUtils";
 import { Analytics } from "@vercel/analytics/react";
 
 const initialProfileId = new URLSearchParams(window.location.search).get("p");
@@ -41,6 +42,7 @@ function App() {
   const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>(cachedProfile?.advisorMessages || []);
   const [advisorLoading, setAdvisorLoading] = useState(false);
   const [refreshingAnalysis, setRefreshingAnalysis] = useState(false);
+  const [refreshingProfile, setRefreshingProfile] = useState(false);
   const [actionItems, setActionItems] = useState<ActionItem[]>(cachedProfile?.actionItems || []);
   const advisorInitRef = useRef(false);
 
@@ -324,7 +326,6 @@ function App() {
         role: "assistant",
         content: response.message,
         timestamp: new Date().toISOString(),
-        ...(response.analysis && { analysis: response.analysis }),
         suggestions: response.suggestions,
       };
 
@@ -401,12 +402,12 @@ function App() {
         role: "assistant",
         content: response.message,
         timestamp: new Date().toISOString(),
-        ...(response.analysis && { analysis: response.analysis }),
+        suggestions: response.suggestions,
       };
 
-      // Replace old analysis message, keep chat history and existing suggestions
-      const chatOnly = advisorMessages.filter((m) => !m.analysis);
-      const allMessages = [newAnalysisMsg, ...chatOnly];
+      // Replace the first assistant message (the opening analysis), keep the rest
+      const rest = advisorMessages.slice(1);
+      const allMessages = [newAnalysisMsg, ...rest];
       setAdvisorMessages(allMessages);
 
       const updatedItems = addNewActionItems(response.actionItems, actionItems);
@@ -428,6 +429,28 @@ function App() {
       console.error("Refresh analysis error:", err);
     } finally {
       setRefreshingAnalysis(false);
+    }
+  };
+
+  const handleRefreshProfile = async () => {
+    setRefreshingProfile(true);
+    try {
+      const text = formatProfileAsText(profile);
+      const response = await callApi({ type: "parse", text });
+      const refreshed = {
+        ...profile,
+        activities: response.activities,
+        lastUpdated: new Date(),
+      };
+      setProfile(refreshed);
+      if (profileId) {
+        try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(refreshed)); } catch {}
+        await updateProfile(profileId, refreshed);
+      }
+    } catch (err) {
+      console.error("Refresh profile error:", err);
+    } finally {
+      setRefreshingProfile(false);
     }
   };
 
@@ -491,6 +514,8 @@ function App() {
           actionItems={actionItems}
           onToggleActionItem={handleToggleActionItem}
           profileId={profileId}
+          onRefreshProfile={handleRefreshProfile}
+          refreshingProfile={refreshingProfile}
         />
       )}
       <Analytics />

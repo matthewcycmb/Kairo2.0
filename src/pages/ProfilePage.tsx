@@ -28,6 +28,8 @@ interface ProfilePageProps {
   actionItems: ActionItem[];
   onToggleActionItem: (id: string) => void;
   profileId: string | null;
+  onRefreshProfile: () => void;
+  refreshingProfile: boolean;
 }
 
 export default function ProfilePage({
@@ -48,6 +50,8 @@ export default function ProfilePage({
   actionItems,
   onToggleActionItem,
   profileId,
+  onRefreshProfile,
+  refreshingProfile,
 }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState<"profile" | "advisor" | "apphelper">("profile");
   const [forgotStep, setForgotStep] = useState<"idle" | "input" | "followup">("idle");
@@ -260,6 +264,24 @@ export default function ProfilePage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {activeTab === "profile" && (
+            <button
+              onClick={onRefreshProfile}
+              disabled={refreshingProfile}
+              className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white disabled:opacity-40"
+            >
+              {refreshingProfile ? "Refreshing..." : "Refresh Profile"}
+            </button>
+          )}
+          {activeTab === "advisor" && (
+            <button
+              onClick={onRefreshAnalysis}
+              disabled={refreshingAnalysis}
+              className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white disabled:opacity-40"
+            >
+              {refreshingAnalysis ? "Refreshing..." : "Refresh Analysis"}
+            </button>
+          )}
           <button
             onClick={() => setShowResume(true)}
             className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
@@ -347,19 +369,27 @@ export default function ProfilePage({
             </div>
           )}
 
-          {Array.from(grouped.entries()).map(([category, activities]) => (
-            <CategorySection
-              key={category}
-              category={category}
-              activities={activities}
-              onEditActivity={onEditActivity}
-            />
-          ))}
-
-          {profile.activities.length === 0 && (
-            <div className="py-12 text-center text-white/40">
-              No activities yet. Something went wrong — try starting over.
+          {refreshingProfile ? (
+            <div className="py-24 text-center text-sm text-white/50">
+              Refreshing...
             </div>
+          ) : (
+            <>
+              {Array.from(grouped.entries()).map(([category, activities]) => (
+                <CategorySection
+                  key={category}
+                  category={category}
+                  activities={activities}
+                  onEditActivity={onEditActivity}
+                />
+              ))}
+
+              {profile.activities.length === 0 && (
+                <div className="py-12 text-center text-white/40">
+                  No activities yet. Something went wrong — try starting over.
+                </div>
+              )}
+            </>
           )}
 
           {isLoading && (
@@ -508,8 +538,6 @@ export default function ProfilePage({
           advisorMessages={advisorMessages}
           onNewMessage={onAdvisorMessage}
           isLoading={advisorLoading}
-          isRefreshing={refreshingAnalysis}
-          onRefreshAnalysis={onRefreshAnalysis}
           actionItems={actionItems}
           onToggleActionItem={onToggleActionItem}
         />

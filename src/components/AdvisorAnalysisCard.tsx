@@ -81,7 +81,7 @@ export default function AdvisorAnalysisCard({ analysis }: AdvisorAnalysisCardPro
   };
 
   return (
-    <div className="mb-4 space-y-3">
+    <div className="space-y-3">
       <CollapsibleSection
         title="Profile Strengths"
         borderColor="border-white"

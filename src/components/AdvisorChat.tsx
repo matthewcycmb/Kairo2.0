@@ -3,7 +3,6 @@ import type { AdvisorMessage, ActionItem } from "../types/profile";
 import ReactMarkdown from "react-markdown";
 import ChatBubble from "./ChatBubble";
 import LoadingSpinner from "./LoadingSpinner";
-import AdvisorAnalysisCard from "./AdvisorAnalysisCard";
 
 /** Ensure message content is always a clean displayable string */
 function sanitizeContent(content: unknown): string {
@@ -34,8 +33,6 @@ interface AdvisorChatProps {
   advisorMessages: AdvisorMessage[];
   onNewMessage: (text: string) => void;
   isLoading: boolean;
-  isRefreshing: boolean;
-  onRefreshAnalysis: () => void;
   actionItems: ActionItem[];
   onToggleActionItem: (id: string) => void;
 }
@@ -44,8 +41,6 @@ export default function AdvisorChat({
   advisorMessages,
   onNewMessage,
   isLoading,
-  isRefreshing,
-  onRefreshAnalysis,
   actionItems,
   onToggleActionItem,
 }: AdvisorChatProps) {
@@ -118,17 +113,13 @@ export default function AdvisorChat({
     ? lastAssistantMsg.suggestions
     : [];
 
-  // Separate analysis message from chat messages
-  const analysisMsg = advisorMessages.find((m) => m.analysis);
-  const chatMessages = advisorMessages.filter((m) => !m.analysis);
-
   const activeItems = actionItems.filter((i) => i.status === "pending");
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col gap-3">
       {/* Pinned action items */}
       {activeItems.length > 0 && (
-        <div className="mb-4 rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
+        <div className="rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
           <div className="mb-3 flex items-center gap-2 border-l-[3px] border-blue-400 pl-3">
             <span className="text-lg font-bold text-white/90">
               Your Action Items
@@ -169,29 +160,15 @@ export default function AdvisorChat({
         </div>
       )}
 
-      {/* Pinned analysis card — stays visible above chat */}
-      {analysisMsg && (
-        <div className="mb-4">
-          <AdvisorAnalysisCard analysis={analysisMsg.analysis!} />
-          <button
-            onClick={onRefreshAnalysis}
-            disabled={isRefreshing || isLoading}
-            className="mt-2 w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-2.5 text-sm font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70 disabled:opacity-40"
-          >
-            {isRefreshing ? "Refreshing..." : "Refresh Analysis"}
-          </button>
-        </div>
-      )}
-
       {/* Messages area */}
-      <div className="flex-1 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.15] bg-white/[0.06] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
+      <div className="flex-1 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
         {advisorMessages.length === 0 && !isLoading && (
           <div className="flex h-full items-center justify-center py-12">
             <p className="text-base text-white/40">Your advisor is getting ready...</p>
           </div>
         )}
 
-        {chatMessages.map((msg) => (
+        {advisorMessages.map((msg) => (
           <ChatBubble key={msg.id} type={msg.role === "user" ? "user" : "ai"}>
             {msg.role === "user" ? (
               <div className="text-base leading-relaxed">{msg.content}</div>
