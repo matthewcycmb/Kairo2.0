@@ -211,6 +211,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true });
     }
 
+    if (type === "clear-advisor-messages") {
+      const { profileId } = body;
+      if (!isValidUUID(profileId)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+
+      const { error } = await supabase
+        .from("advisor_messages")
+        .delete()
+        .eq("profile_id", profileId);
+
+      if (error) {
+        console.error("Supabase clear messages error:", error);
+        return res.status(500).json({ error: "Failed to clear messages" });
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
     if (type === "load-advisor-messages") {
       const { profileId } = body;
       if (!isValidUUID(profileId)) {

@@ -76,6 +76,16 @@ export async function saveAdvisorMessages(profileId: string, messages: AdvisorMe
   if (!res.ok) throw new Error("Failed to save advisor messages");
 }
 
+export async function clearAdvisorMessages(profileId: string): Promise<void> {
+  const res = await fetchWithTimeout("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "clear-advisor-messages", profileId }),
+  });
+
+  if (!res.ok) throw new Error("Failed to clear advisor messages");
+}
+
 export async function loadAdvisorMessages(profileId: string): Promise<AdvisorMessage[]> {
   const res = await fetchWithTimeout("/api/profile", {
     method: "POST",

@@ -6,7 +6,7 @@ import BrainDumpPage from "./pages/BrainDumpPage";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import GoalSetupPage from "./pages/GoalSetupPage";
-import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, saveActionItems, loadActionItems, updateActionItem } from "./lib/profileApi";
+import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, clearAdvisorMessages, saveActionItems, loadActionItems, updateActionItem } from "./lib/profileApi";
 import { callApi } from "./lib/apiClient";
 import { formatProfileAsText } from "./lib/profileUtils";
 import { Analytics } from "@vercel/analytics/react";
@@ -405,13 +405,15 @@ function App() {
         suggestions: response.suggestions,
       };
 
-      // Clear visible chat — old messages are already saved in Supabase
+      // Clear visible chat and replace with fresh conversation
       setAdvisorMessages([firstMsg]);
 
       const updatedItems = addNewActionItems(response.actionItems, actionItems);
       setActionItems(updatedItems);
 
       if (profileId) {
+        // Clear old messages from Supabase, then save the new one
+        await clearAdvisorMessages(profileId).catch(console.error);
         await Promise.all([
           saveAdvisorMessages(profileId, [firstMsg]).catch(console.error),
           updatedItems.length > 0
