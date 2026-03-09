@@ -45,8 +45,8 @@ function App() {
   const [refreshingAnalysis, setRefreshingAnalysis] = useState(false);
   const [refreshingProfile, setRefreshingProfile] = useState(false);
   const [actionItems, setActionItems] = useState<ActionItem[]>(cachedProfile?.actionItems || []);
-  const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
-  const [latestConvId, setLatestConvId] = useState(conversationId);
+  const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID());
+  const [latestConvId, setLatestConvId] = useState<string>(conversationId);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const latestConvMessagesRef = useRef<AdvisorMessage[]>([]);
   const advisorInitRef = useRef(false);
@@ -317,7 +317,7 @@ function App() {
       // Step 2: If messages exist → restore history (no spinner needed)
       if (loadedMessages.length > 0) {
         // Extract conversationId from loaded messages
-        const existingConvId = loadedMessages.find((m) => m.conversationId)?.conversationId;
+        const existingConvId = loadedMessages.find((m) => m.conversationId)?.conversationId ?? null;
         if (existingConvId) {
           setConversationId(existingConvId);
           setLatestConvId(existingConvId);

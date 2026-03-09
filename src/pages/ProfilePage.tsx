@@ -67,8 +67,6 @@ export default function ProfilePage({
   refreshingAnalysis,
   onAdvisorTabOpened,
   onNewConversation,
-  actionItems,
-  onToggleActionItem,
   profileId,
   onRefreshProfile,
   refreshingProfile,
@@ -631,8 +629,6 @@ export default function ProfilePage({
           onNewMessage={onAdvisorMessage}
           isLoading={advisorLoading}
           isRefreshing={refreshingAnalysis}
-          actionItems={actionItems}
-          onToggleActionItem={onToggleActionItem}
         />
       </div>
 

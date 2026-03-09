@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type ComponentPropsWithoutRef } from "react";
-import type { AdvisorMessage, ActionItem } from "../types/profile";
+import type { AdvisorMessage } from "../types/profile";
 import ReactMarkdown from "react-markdown";
 import ChatBubble from "./ChatBubble";
 import LoadingSpinner from "./LoadingSpinner";
@@ -34,8 +34,6 @@ interface AdvisorChatProps {
   onNewMessage: (text: string) => void;
   isLoading: boolean;
   isRefreshing: boolean;
-  actionItems: ActionItem[];
-  onToggleActionItem: (id: string) => void;
 }
 
 export default function AdvisorChat({
@@ -43,8 +41,6 @@ export default function AdvisorChat({
   onNewMessage,
   isLoading,
   isRefreshing,
-  actionItems,
-  onToggleActionItem,
 }: AdvisorChatProps) {
   const [input, setInput] = useState("");
   const [copiedBlock, setCopiedBlock] = useState<string | null>(null);
