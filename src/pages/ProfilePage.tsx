@@ -273,6 +273,15 @@ export default function ProfilePage({
               {refreshingProfile ? "Refreshing..." : "Refresh Profile"}
             </button>
           )}
+          {activeTab === "advisor" && (
+            <button
+              onClick={onNewConversation}
+              disabled={refreshingAnalysis}
+              className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white disabled:opacity-40"
+            >
+              {refreshingAnalysis ? "Starting..." : "New conversation"}
+            </button>
+          )}
           <button
             onClick={() => setShowResume(true)}
             className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
@@ -291,16 +300,7 @@ export default function ProfilePage({
             {showMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
-                  {activeTab === "advisor" && (
-                    <button
-                      onClick={() => { onNewConversation(); setShowMenu(false); }}
-                      disabled={refreshingAnalysis}
-                      className="w-full px-4 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/[0.08] disabled:opacity-40"
-                    >
-                      {refreshingAnalysis ? "Starting..." : "New conversation"}
-                    </button>
-                  )}
+                <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
                   <button
                     onClick={() => { handleCopy(); setShowMenu(false); }}
                     className="w-full px-4 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/[0.08]"
