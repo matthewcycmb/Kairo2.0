@@ -6,7 +6,8 @@ import BrainDumpPage from "./pages/BrainDumpPage";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import GoalSetupPage from "./pages/GoalSetupPage";
-import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, clearAdvisorMessages, saveActionItems, loadActionItems, updateActionItem } from "./lib/profileApi";
+import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, saveActionItems, loadActionItems, updateActionItem, listConversations, deleteConversation } from "./lib/profileApi";
+import type { ConversationSummary } from "./types/profile";
 import { callApi } from "./lib/apiClient";
 import { formatProfileAsText } from "./lib/profileUtils";
 import { Analytics } from "@vercel/analytics/react";
@@ -44,6 +45,10 @@ function App() {
   const [refreshingAnalysis, setRefreshingAnalysis] = useState(false);
   const [refreshingProfile, setRefreshingProfile] = useState(false);
   const [actionItems, setActionItems] = useState<ActionItem[]>(cachedProfile?.actionItems || []);
+  const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
+  const [latestConvId, setLatestConvId] = useState(conversationId);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const latestConvMessagesRef = useRef<AdvisorMessage[]>([]);
   const advisorInitRef = useRef(false);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -192,6 +197,7 @@ function App() {
       role: "user",
       content: userText,
       timestamp: new Date().toISOString(),
+      conversationId,
     };
 
     const updatedMessages = [...advisorMessages, userMsg];
@@ -221,10 +227,14 @@ function App() {
         content: messageText,
         timestamp: new Date().toISOString(),
         suggestions: response.suggestions,
+        conversationId,
       };
 
       const allMessages = [...updatedMessages, assistantMsg];
       setAdvisorMessages(allMessages);
+      if (conversationId === latestConvId) {
+        latestConvMessagesRef.current = allMessages;
+      }
 
       // Add action items if room
       const finalItems = addNewActionItems(response.actionItems, updatedItems);
@@ -234,7 +244,7 @@ function App() {
       if (profileId) {
         const newItems = finalItems.filter((item) => !updatedItems.some((old) => old.id === item.id));
         await Promise.all([
-          saveAdvisorMessages(profileId, [userMsg, assistantMsg]).catch(console.error),
+          saveAdvisorMessages(profileId, [userMsg, assistantMsg], conversationId).catch(console.error),
           newItems.length > 0
             ? saveActionItems(profileId, newItems).catch(console.error)
             : Promise.resolve(),
@@ -268,10 +278,8 @@ function App() {
     if (advisorInitRef.current) return;
     advisorInitRef.current = true;
 
-    setAdvisorLoading(true);
-
     try {
-      // Step 1: Load from Supabase
+      // Step 1: Load from Supabase (silently — no loading spinner)
       let loadedMessages: AdvisorMessage[] = [];
       let loadedItems: ActionItem[] = [];
 
@@ -306,14 +314,31 @@ function App() {
         }
       }
 
-      // Step 2: If messages exist → restore history
+      // Step 2: If messages exist → restore history (no spinner needed)
       if (loadedMessages.length > 0) {
+        // Extract conversationId from loaded messages
+        const existingConvId = loadedMessages.find((m) => m.conversationId)?.conversationId;
+        if (existingConvId) {
+          setConversationId(existingConvId);
+          setLatestConvId(existingConvId);
+        } else {
+          // Legacy messages without conversationId — assign one and re-save
+          const newConvId = conversationId;
+          setLatestConvId(newConvId);
+          const tagged = loadedMessages.map((m) => ({ ...m, conversationId: newConvId }));
+          loadedMessages = tagged;
+          if (profileId) {
+            saveAdvisorMessages(profileId, tagged, newConvId).catch(console.error);
+          }
+        }
         setAdvisorMessages(loadedMessages);
+        latestConvMessagesRef.current = loadedMessages;
         setActionItems(loadedItems);
         return;
       }
 
-      // Step 4: No messages AND no pending items → fresh analysis
+      // Step 3: No messages at all → generate fresh analysis (show spinner)
+      setAdvisorLoading(true);
       const response = await callApi({
         type: "advisor",
         profile,
@@ -327,6 +352,7 @@ function App() {
         content: response.message,
         timestamp: new Date().toISOString(),
         suggestions: response.suggestions,
+        conversationId,
       };
 
       setAdvisorMessages([firstMsg]);
@@ -337,7 +363,7 @@ function App() {
       // Persist to Supabase — await so data is saved before user can close tab
       if (profileId) {
         await Promise.all([
-          saveAdvisorMessages(profileId, [firstMsg]).catch(console.error),
+          saveAdvisorMessages(profileId, [firstMsg], conversationId).catch(console.error),
           updatedItems.length > 0
             ? saveActionItems(profileId, updatedItems).catch(console.error)
             : Promise.resolve(),
@@ -390,6 +416,10 @@ function App() {
   const handleNewConversation = async () => {
     setRefreshingAnalysis(true);
     try {
+      const newConvId = crypto.randomUUID();
+      setConversationId(newConvId);
+      setLatestConvId(newConvId);
+
       const response = await callApi({
         type: "advisor",
         profile,
@@ -403,19 +433,19 @@ function App() {
         content: response.message,
         timestamp: new Date().toISOString(),
         suggestions: response.suggestions,
+        conversationId: newConvId,
       };
 
-      // Clear visible chat and replace with fresh conversation
+      // Replace visible chat with fresh conversation (old messages preserved in DB)
       setAdvisorMessages([firstMsg]);
+      latestConvMessagesRef.current = [firstMsg];
 
       const updatedItems = addNewActionItems(response.actionItems, actionItems);
       setActionItems(updatedItems);
 
       if (profileId) {
-        // Clear old messages from Supabase, then save the new one
-        await clearAdvisorMessages(profileId).catch(console.error);
         await Promise.all([
-          saveAdvisorMessages(profileId, [firstMsg]).catch(console.error),
+          saveAdvisorMessages(profileId, [firstMsg], newConvId).catch(console.error),
           updatedItems.length > 0
             ? saveActionItems(profileId, updatedItems).catch(console.error)
             : Promise.resolve(),
@@ -434,6 +464,52 @@ function App() {
       console.error("New conversation error:", err);
     } finally {
       setRefreshingAnalysis(false);
+    }
+  };
+
+  const handleLoadConversation = async (convId: string) => {
+    if (!profileId) return;
+    // If we're currently on the latest conversation, stash its messages
+    if (conversationId === latestConvId) {
+      latestConvMessagesRef.current = advisorMessages;
+    }
+    try {
+      const msgs = await loadAdvisorMessages(profileId, convId);
+      setAdvisorMessages(msgs);
+      setConversationId(convId);
+    } catch (err) {
+      console.error("Failed to load conversation:", err);
+    }
+  };
+
+  const handleBackToCurrent = useCallback(() => {
+    setConversationId(latestConvId);
+    setAdvisorMessages(latestConvMessagesRef.current);
+  }, [latestConvId]);
+
+  const handleDeleteConversation = async (convId: string) => {
+    if (!profileId) return;
+    try {
+      await deleteConversation(profileId, convId);
+      setConversations((prev) => prev.filter((c) => c.id !== convId));
+      // If we just deleted the conversation we're viewing, go back to current
+      if (convId === conversationId && convId !== latestConvId) {
+        setConversationId(latestConvId);
+        setAdvisorMessages(latestConvMessagesRef.current);
+      }
+    } catch (err) {
+      console.error("Failed to delete conversation:", err);
+    }
+  };
+
+  const handleListConversations = async () => {
+    if (!profileId) return;
+    try {
+      const convs = await listConversations(profileId);
+      // Exclude the current conversation from the list
+      setConversations(convs.filter((c) => c.id !== conversationId));
+    } catch (err) {
+      console.error("Failed to list conversations:", err);
     }
   };
 
@@ -521,6 +597,12 @@ function App() {
           profileId={profileId}
           onRefreshProfile={handleRefreshProfile}
           refreshingProfile={refreshingProfile}
+          onLoadConversation={handleLoadConversation}
+          onBackToCurrent={handleBackToCurrent}
+          onDeleteConversation={handleDeleteConversation}
+          conversations={conversations}
+          onListConversations={handleListConversations}
+          isViewingPrevious={conversationId !== latestConvId}
         />
       )}
       <Analytics />

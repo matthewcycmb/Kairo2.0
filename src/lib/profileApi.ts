@@ -1,4 +1,4 @@
-import type { StudentProfile, AdvisorMessage, ActionItem } from "../types/profile";
+import type { StudentProfile, AdvisorMessage, ActionItem, ConversationSummary } from "../types/profile";
 
 const TIMEOUT_MS = 15_000; // 15 seconds for DB operations
 
@@ -66,36 +66,48 @@ export async function lookupIdentifier(identifier: string): Promise<string | nul
   return data.profileId;
 }
 
-export async function saveAdvisorMessages(profileId: string, messages: AdvisorMessage[]): Promise<void> {
+export async function saveAdvisorMessages(profileId: string, messages: AdvisorMessage[], conversationId?: string): Promise<void> {
   const res = await fetchWithTimeout("/api/profile", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type: "save-advisor-messages", profileId, messages }),
+    body: JSON.stringify({ type: "save-advisor-messages", profileId, messages, conversationId }),
   });
 
   if (!res.ok) throw new Error("Failed to save advisor messages");
 }
 
-export async function clearAdvisorMessages(profileId: string): Promise<void> {
+export async function loadAdvisorMessages(profileId: string, conversationId?: string): Promise<AdvisorMessage[]> {
   const res = await fetchWithTimeout("/api/profile", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type: "clear-advisor-messages", profileId }),
-  });
-
-  if (!res.ok) throw new Error("Failed to clear advisor messages");
-}
-
-export async function loadAdvisorMessages(profileId: string): Promise<AdvisorMessage[]> {
-  const res = await fetchWithTimeout("/api/profile", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type: "load-advisor-messages", profileId }),
+    body: JSON.stringify({ type: "load-advisor-messages", profileId, conversationId }),
   });
 
   if (!res.ok) throw new Error("Failed to load advisor messages");
   const data = await res.json();
   return data.messages;
+}
+
+export async function listConversations(profileId: string): Promise<ConversationSummary[]> {
+  const res = await fetchWithTimeout("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "list-conversations", profileId }),
+  });
+
+  if (!res.ok) throw new Error("Failed to list conversations");
+  const data = await res.json();
+  return data.conversations;
+}
+
+export async function deleteConversation(profileId: string, conversationId: string): Promise<void> {
+  const res = await fetchWithTimeout("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "delete-conversation", profileId, conversationId }),
+  });
+
+  if (!res.ok) throw new Error("Failed to delete conversation");
 }
 
 export async function saveActionItems(profileId: string, items: ActionItem[]): Promise<void> {

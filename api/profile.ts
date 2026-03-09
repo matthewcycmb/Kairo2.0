@@ -181,7 +181,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (type === "save-advisor-messages") {
-      const { profileId, messages } = body;
+      const { profileId, messages, conversationId } = body;
       if (!isValidUUID(profileId)) {
         return res.status(400).json({ error: "Invalid profile ID" });
       }
@@ -189,7 +189,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: "Messages are required" });
       }
 
-      const rows = messages.map((m: { id: string; role: string; content: string; analysis?: unknown; suggestions?: unknown; timestamp: string }) => ({
+      const rows = messages.map((m: { id: string; role: string; content: string; analysis?: unknown; suggestions?: unknown; timestamp: string; conversationId?: string }) => ({
         id: m.id,
         profile_id: profileId,
         role: m.role,
@@ -197,6 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         analysis: m.analysis || null,
         suggestions: m.suggestions || null,
         created_at: m.timestamp || new Date().toISOString(),
+        conversation_id: m.conversationId || conversationId || null,
       }));
 
       const { error } = await supabase
@@ -211,36 +212,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true });
     }
 
-    if (type === "clear-advisor-messages") {
-      const { profileId } = body;
-      if (!isValidUUID(profileId)) {
-        return res.status(400).json({ error: "Invalid profile ID" });
-      }
-
-      const { error } = await supabase
-        .from("advisor_messages")
-        .delete()
-        .eq("profile_id", profileId);
-
-      if (error) {
-        console.error("Supabase clear messages error:", error);
-        return res.status(500).json({ error: "Failed to clear messages" });
-      }
-
-      return res.status(200).json({ ok: true });
-    }
-
     if (type === "load-advisor-messages") {
-      const { profileId } = body;
+      const { profileId, conversationId } = body;
       if (!isValidUUID(profileId)) {
         return res.status(400).json({ error: "Invalid profile ID" });
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("advisor_messages")
         .select("*")
-        .eq("profile_id", profileId)
-        .order("created_at", { ascending: true });
+        .eq("profile_id", profileId);
+
+      if (conversationId) {
+        if (typeof conversationId !== "string" || conversationId.length > 100) {
+          return res.status(400).json({ error: "Invalid conversation ID" });
+        }
+        // Load a specific conversation
+        query = query.eq("conversation_id", conversationId);
+      } else {
+        // Load the most recent conversation: find its conversation_id first
+        const { data: latest } = await supabase
+          .from("advisor_messages")
+          .select("conversation_id")
+          .eq("profile_id", profileId)
+          .not("conversation_id", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        const latestConvId = latest?.[0]?.conversation_id;
+        if (latestConvId) {
+          query = query.eq("conversation_id", latestConvId);
+        } else {
+          // Legacy: load all messages that have no conversation_id
+          query = query.is("conversation_id", null);
+        }
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: true });
 
       if (error) {
         console.error("Supabase load messages error:", error);
@@ -254,9 +262,83 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         timestamp: row.created_at,
         analysis: row.analysis || undefined,
         suggestions: row.suggestions || undefined,
+        conversationId: row.conversation_id || undefined,
       }));
 
       return res.status(200).json({ messages });
+    }
+
+    if (type === "list-conversations") {
+      const { profileId } = body;
+      if (!isValidUUID(profileId)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+
+      // Get all messages grouped by conversation_id, ordered by most recent first
+      const { data, error } = await supabase
+        .from("advisor_messages")
+        .select("conversation_id, role, content, created_at")
+        .eq("profile_id", profileId)
+        .not("conversation_id", "is", null)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Supabase list conversations error:", error);
+        return res.status(500).json({ error: "Failed to list conversations" });
+      }
+
+      // Group by conversation_id and extract preview + timestamp
+      const convMap = new Map<string, { preview: string; timestamp: string }>();
+      for (const row of data || []) {
+        const cid = row.conversation_id as string;
+        if (!convMap.has(cid)) {
+          convMap.set(cid, { preview: "", timestamp: row.created_at });
+        }
+        const entry = convMap.get(cid)!;
+        // Use first assistant message as preview
+        if (!entry.preview && row.role === "assistant") {
+          entry.preview = (row.content as string)
+            .replace(/[#*_~`>\-\[\]()!]/g, "")
+            .replace(/\n+/g, " ")
+            .trim()
+            .slice(0, 120);
+        }
+        // Track latest timestamp
+        entry.timestamp = row.created_at;
+      }
+
+      const conversations = Array.from(convMap.entries())
+        .map(([id, { preview, timestamp }]) => ({
+          id,
+          preview: preview || "Conversation",
+          timestamp,
+        }))
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      return res.status(200).json({ conversations });
+    }
+
+    if (type === "delete-conversation") {
+      const { profileId, conversationId } = body;
+      if (!isValidUUID(profileId)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      if (!conversationId || typeof conversationId !== "string" || conversationId.length > 100) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
+
+      const { error } = await supabase
+        .from("advisor_messages")
+        .delete()
+        .eq("profile_id", profileId)
+        .eq("conversation_id", conversationId);
+
+      if (error) {
+        console.error("Supabase delete conversation error:", error);
+        return res.status(500).json({ error: "Failed to delete conversation" });
+      }
+
+      return res.status(200).json({ ok: true });
     }
 
     if (type === "save-action-items") {

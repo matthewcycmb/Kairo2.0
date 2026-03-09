@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import type { ParsedActivity } from "../types/activity";
-import type { StudentProfile, FollowUpQuestion, AdvisorMessage, ActionItem } from "../types/profile";
+import type { StudentProfile, FollowUpQuestion, AdvisorMessage, ActionItem, ConversationSummary } from "../types/profile";
 import { groupByCategory, copyProfileToClipboard } from "../lib/profileUtils";
 import { callApi } from "../lib/apiClient";
 import { saveIdentifier } from "../lib/profileApi";
@@ -9,6 +9,20 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import AdvisorChat from "../components/AdvisorChat";
 import AppHelper from "../components/AppHelper";
 import ResumeModal from "../components/ResumeModal";
+
+function formatRelativeTime(timestamp: string): string {
+  const now = Date.now();
+  const then = new Date(timestamp).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDays = Math.floor(diffHr / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(timestamp).toLocaleDateString();
+}
 
 interface ProfilePageProps {
   profile: StudentProfile;
@@ -30,6 +44,12 @@ interface ProfilePageProps {
   profileId: string | null;
   onRefreshProfile: () => void;
   refreshingProfile: boolean;
+  onLoadConversation: (convId: string) => void;
+  onBackToCurrent: () => void;
+  onDeleteConversation: (convId: string) => void;
+  conversations: ConversationSummary[];
+  onListConversations: () => void;
+  isViewingPrevious: boolean;
 }
 
 export default function ProfilePage({
@@ -52,6 +72,12 @@ export default function ProfilePage({
   profileId,
   onRefreshProfile,
   refreshingProfile,
+  onLoadConversation,
+  onBackToCurrent,
+  onDeleteConversation,
+  conversations,
+  onListConversations,
+  isViewingPrevious,
 }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState<"profile" | "advisor" | "apphelper">("profile");
   const [forgotStep, setForgotStep] = useState<"idle" | "input" | "followup">("idle");
@@ -68,6 +94,7 @@ export default function ProfilePage({
   const [linkCopied, setLinkCopied] = useState(false);
   const [showResume, setShowResume] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showPrevChats, setShowPrevChats] = useState(false);
 
   const grouped = groupByCategory(profile.activities);
 
@@ -279,15 +306,80 @@ export default function ProfilePage({
               disabled={refreshingAnalysis}
               className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white disabled:opacity-40"
             >
-              {refreshingAnalysis ? "Starting..." : "New conversation"}
+              {refreshingAnalysis ? "Loading new chat..." : "New conversation"}
             </button>
           )}
-          <button
-            onClick={() => setShowResume(true)}
-            className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
-          >
-            Generate resume
-          </button>
+          {activeTab === "advisor" ? (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowPrevChats((v) => !v);
+                  if (!showPrevChats) onListConversations();
+                }}
+                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+              >
+                Previous chats
+              </button>
+              {showPrevChats && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowPrevChats(false)} />
+                  <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
+                    {isViewingPrevious && (
+                      <button
+                        onClick={() => {
+                          onBackToCurrent();
+                          setShowPrevChats(false);
+                        }}
+                        className="w-full border-b border-white/[0.10] px-4 py-2.5 text-left text-sm font-medium text-blue-400 transition-colors hover:bg-white/[0.08]"
+                      >
+                        Back to current chat
+                      </button>
+                    )}
+                    {conversations.length === 0 ? (
+                      <p className="px-4 py-3 text-sm text-white/40">No previous conversations</p>
+                    ) : (
+                      conversations.map((conv) => (
+                        <div
+                          key={conv.id}
+                          className="group flex items-center transition-colors hover:bg-white/[0.08]"
+                        >
+                          <button
+                            onClick={() => {
+                              onLoadConversation(conv.id);
+                              setShowPrevChats(false);
+                            }}
+                            className="min-w-0 flex-1 px-4 py-2.5 text-left"
+                          >
+                            <p className="truncate text-sm text-white/80">{conv.preview}</p>
+                            <p className="text-xs text-white/35">{formatRelativeTime(conv.timestamp)}</p>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteConversation(conv.id);
+                            }}
+                            className="shrink-0 px-3 py-2 text-white/20 opacity-0 transition-all hover:text-red-400 group-hover:opacity-100"
+                            title="Delete conversation"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+                              <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5A.75.75 0 0 1 9.95 6Z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowResume(true)}
+              className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+            >
+              Generate resume
+            </button>
+          )}
           <div className="relative">
             <button
               onClick={() => setShowMenu((v) => !v)}

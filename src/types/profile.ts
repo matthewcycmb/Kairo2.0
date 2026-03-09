@@ -42,6 +42,13 @@ export interface AdvisorMessage {
   timestamp: string;
   analysis?: AdvisorAnalysis;
   suggestions?: string[];
+  conversationId?: string;
+}
+
+export interface ConversationSummary {
+  id: string;
+  preview: string;
+  timestamp: string;
 }
 
 export interface StudentProfile {

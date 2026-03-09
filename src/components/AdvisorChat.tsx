@@ -172,7 +172,7 @@ export default function AdvisorChat({
 
         {isRefreshing && (
           <div className="flex h-full items-center justify-center py-12">
-            <p className="animate-pulse text-base text-white/50">Refreshing analysis...</p>
+            <p className="animate-pulse text-base text-white/50">Loading new chat...</p>
           </div>
         )}
 
