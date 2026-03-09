@@ -291,7 +291,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
           {activity.skills.map((skill, i) => (
             <span
               key={i}
-              className="rounded-full border border-white/[0.10] bg-white/[0.08] px-3 py-1 text-sm text-white/70"
+              className="rounded-full border border-white/[0.10] bg-white/[0.08] px-3 py-1 text-sm capitalize text-white/70"
             >
               {skill}
             </span>

@@ -200,7 +200,7 @@ export default function ResumeModal({ profile, onClose }: ResumeModalProps) {
           <div className="md:w-[38%] space-y-5">
             {allSkills.length > 0 && (
               <Section title="Skills">
-                <p className="text-sm leading-relaxed text-white/60">
+                <p className="text-sm capitalize leading-relaxed text-white/60">
                   {allSkills.join(", ")}
                 </p>
               </Section>
