@@ -115,55 +115,15 @@ export default function AdvisorChat({
     ? lastAssistantMsg.suggestions
     : [];
 
-  const activeItems = actionItems.filter((i) => i.status === "pending");
-
   return (
     <div className="flex h-full flex-col gap-3">
-      {/* Pinned action items */}
-      {activeItems.length > 0 && (
-        <div className="rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
-          <div className="mb-3 flex items-center gap-2 border-l-[3px] border-blue-400 pl-3">
-            <span className="text-lg font-bold text-white/90">
-              Your Action Items
-            </span>
-            <span className="text-sm text-white/30">
-              {activeItems.length}/2
-            </span>
-          </div>
-          <div className="space-y-2.5">
-            {activeItems.map((item) => (
-              <label
-                key={item.id}
-                className="group flex cursor-pointer items-start gap-3 rounded-lg p-2 transition-colors hover:bg-white/[0.05]"
-              >
-                <input
-                  type="checkbox"
-                  checked={item.status === "completed"}
-                  onChange={() => onToggleActionItem(item.id)}
-                  className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer appearance-none rounded border border-white/20 bg-white/[0.05] checked:border-blue-400 checked:bg-blue-400"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-base leading-snug text-white/80">
-                    {item.action}
-                  </p>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onNewMessage(`Draft me a ready-to-copy message for this: "${item.action}". Put it in a code block.`);
-                    }}
-                    className="mt-0.5 text-xs text-white/30 underline decoration-white/15 transition-colors hover:text-white/50"
-                  >
-                    Draft this for me
-                  </button>
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Messages area */}
       <div className="flex-1 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
+        {/* Intro header */}
+        <div className="mb-3 pb-3 border-b border-white/[0.08] text-center">
+          <h2 className="text-base font-semibold text-white/90">Kairo Advisor</h2>
+          <p className="text-sm text-white/40">Chat & receive personalized guidance based on your profile</p>
+        </div>
         {advisorMessages.length === 0 && !isLoading && !isRefreshing && (
           <div className="flex h-full items-center justify-center py-12">
             <p className="text-base text-white/40">Your advisor is getting ready...</p>

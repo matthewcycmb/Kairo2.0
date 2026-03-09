@@ -99,8 +99,14 @@ export default function AppHelper({ profile }: AppHelperProps) {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      {/* Step 1: Question input */}
-      <div className="rounded-2xl border border-white/[0.15] bg-white/[0.06] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
+      {/* Intro header */}
+      <div className="rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
+        <div className="mb-3 pb-3 border-b border-white/[0.08] text-center">
+          <h2 className="text-base font-semibold text-white/90">Kairo Application Writer</h2>
+          <p className="text-sm text-white/40">Paste a question and get a personalized answer based on your profile</p>
+        </div>
+
+        {/* Step 1: Question input */}
         <label className="mb-1 block text-sm font-medium text-white/70">
           Application Question
         </label>
