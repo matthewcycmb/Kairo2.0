@@ -370,10 +370,12 @@ Respond with a JSON object in this exact format:
 }
 
 Rules:
-- "message" is your conversational response — keep it concise and punchy
-- CRITICAL FORMATTING: Mix short paragraphs (1-2 sentences) with bullet points. Use paragraphs for context and transitions, bullets for specific advice or action steps. Never write more than 3 sentences without a visual break. Use **bold** for key terms. Use \\n\\n between sections. Don't force everything into bullets — the mix of paragraphs and bullets should feel like a smart friend talking.
-- "suggestions" should be 2-3 contextual follow-up questions the student might want to ask, based on what you just discussed
-- "actionItems" should only be included if your response gives a specific, actionable recommendation. Omit or use an empty array if you're just answering a question without recommending an action. Each item needs an "action" (what to do) and "gap" (which area it strengthens).
+- HARD LIMIT: Keep follow-up messages under 100 words. Give the single most important point in 3-4 sentences. Same specificity, same directness, same profile references — just delivered in a small piece.
+- Always end with a specific follow-up question that offers to go deeper on what you just said — e.g. "Want me to break down what going all-in on Kairo would actually look like week by week?" This lets the student choose to go deeper instead of being hit with everything at once. Make this question one of the suggestions too.
+- Only give a detailed breakdown (over 100 words) if the student explicitly asks for one (e.g. "yes break it down", "give me more detail", "go deeper").
+- Use **bold** for key terms. Use \\n\\n between paragraphs. No bullet points unless the student asks for a breakdown.
+- "suggestions" must reference specific activities or advice from the conversation — never generic. The first suggestion should be the "go deeper" question from your message.
+- "actionItems" should only be included if your response gives a specific, actionable recommendation. Omit or use an empty array if you're just answering a question. Each item needs an "action" (what to do) and "gap" (which area it strengthens).
 - Return ONLY valid JSON, no extra text`;
 }
 
