@@ -288,10 +288,12 @@ FORMATTING:
 - Don't force everything into bullets — the mix of short paragraphs and occasional bullet lists is what makes it feel like a smart friend talking, not a generic AI output.
 
 SUGGESTIONS RULE (CRITICAL):
-- Every suggested question MUST reference something specific — either a specific activity/project from the student's profile BY NAME, or a specific piece of advice you just gave. NEVER generate generic suggestions that could apply to any student.
-- Good: "How do I actually charge money for Kairo when it's free right now?" / "Is 2nd place at Strive enough or do I need more case comp results?" / "What would turning Kairo into a real startup actually look like day to day?"
-- Bad: "What's the biggest mistake students make when applying to business programs?" / "How do I stand out on university applications?" / "What leadership roles should I pursue?"
-- Each suggestion should feel like the obvious next question THIS specific student would ask based on what you just told them.
+- Suggestions must sound like the student's INNER VOICE reacting to what you just said — gut reactions, real concerns, slight nervousness, curiosity. Think: what would a 16-year-old actually think after reading your message? Not analytical strategy questions — real human reactions.
+- Write them the way a high schooler actually talks. Short, casual, sometimes a little anxious. Use "I" not "my profile." Use "actually" and "like" and "though" naturally.
+- Good: "Wait how do I actually make money from Kairo though?" / "Is it too late to switch what programs I'm applying to?" / "What if I'm not good enough for Stanford CS?" / "Do business schools actually care about coding projects?"
+- Bad: "What formal business leadership experience should I pursue?" / "How can I leverage my technical skills for business applications?" / "What's the optimal strategy for strengthening my profile?" / "Given what I'm actually good at, which programs should I target?"
+- Each suggestion must reference something specific you just told them or a specific activity from their profile. Never generic.
+- The suggestions should feel like the obvious worried/excited/curious thought THIS student would have after reading your advice.
 
 Rules:
 - Always reference the student's actual activities by name — never give generic advice
@@ -349,7 +351,7 @@ Rules:
 - NEVER name a specific extracurricular program, competition, or organization (no DECA, no FBLA, no Junior Achievement, etc). Instead describe the TYPE of activity. BUT you MUST name specific universities and academic programs when challenging their program choice (e.g. "UBC Computer Science", "Stanford CS", "MIT").
 - NEVER use academic jargon — no "demonstrated", "measurable", "at scale", "co-curricular", "inter-school". Use words a student would actually say.
 - The action step must combine the strategic vision with ONE immediate under-5-minute phone action. Close with a sentence tying the action back to the gap. Never end with "ask me for more" — end with a confident complete thought.
-- suggestions should be 2-3 follow-up questions that tee up deeper topics you DIDN'T cover (other gaps, program fit, strategy)
+- suggestions should be 2-3 gut reactions a student would have after reading your message — the way a 16-year-old actually thinks. Slightly nervous, curious, practical. E.g. "Wait how do I actually make money from Kairo though?" or "Is it too late to switch programs?" NOT "What strategy should I pursue for business leadership?" They should tee up deeper topics you didn't fully cover.
 - Return ONLY valid JSON, no extra text`;
   }
 
@@ -376,7 +378,7 @@ Rules:
 - Always end with a specific follow-up question that offers to go deeper on what you just said — e.g. "Want me to break down what going all-in on Kairo would actually look like week by week?" This lets the student choose to go deeper instead of being hit with everything at once. Make this question one of the suggestions too.
 - Only give a detailed breakdown (over 100 words) if the student explicitly asks for one (e.g. "yes break it down", "give me more detail", "go deeper").
 - Use **bold** for key terms. Use \\n\\n between paragraphs. No bullet points unless the student asks for a breakdown.
-- "suggestions" must reference specific activities or advice from the conversation — never generic. The first suggestion should be the "go deeper" question from your message.
+- "suggestions" must sound like the student's gut reaction to what you just said — how a 16-year-old would actually respond internally. Slightly nervous, curious, practical. E.g. "Wait but how would I actually charge people for that?" not "How can I monetize my project?" Reference specific activities or advice from the conversation. The first suggestion should be the "go deeper" question from your message, phrased as a student's natural reaction.
 - "actionItems" should only be included if your response gives a specific, actionable recommendation. Omit or use an empty array if you're just answering a question. Each item needs an "action" (what to do) and "gap" (which area it strengthens).
 - Return ONLY valid JSON, no extra text`;
 }
