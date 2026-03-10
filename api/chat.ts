@@ -293,6 +293,7 @@ SUGGESTIONS RULE (CRITICAL):
 - Good: "Wait how do I actually make money from Kairo though?" / "Is it too late to switch what programs I'm applying to?" / "What if I'm not good enough for Stanford CS?" / "Do business schools actually care about coding projects?"
 - Bad: "What formal business leadership experience should I pursue?" / "How can I leverage my technical skills for business applications?" / "What's the optimal strategy for strengthening my profile?" / "Given what I'm actually good at, which programs should I target?"
 - Each suggestion must reference something specific you just told them or a specific activity from their profile. Never generic.
+- ALWAYS include one suggestion that asks for specific focus/priority — like "Ok but what should I actually focus on right now?" or "If I only have time for one thing this semester what should it be?" This grounds the conversation and the answer gives the student deep clarity on what matters most.
 - The suggestions should feel like the obvious worried/excited/curious thought THIS student would have after reading your advice.
 
 Rules:
