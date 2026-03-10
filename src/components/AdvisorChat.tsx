@@ -4,25 +4,39 @@ import ReactMarkdown from "react-markdown";
 import ChatBubble from "./ChatBubble";
 import LoadingSpinner from "./LoadingSpinner";
 
+/** Fix literal \n sequences to real newlines */
+function fixNewlines(text: string): string {
+  return text.replace(/\\n/g, "\n");
+}
+
+/** Try JSON.parse, then retry after fixing actual newlines inside JSON strings */
+function tryParseJson(text: string): Record<string, unknown> | null {
+  try { return JSON.parse(text); } catch {}
+  // LLMs sometimes put actual newline chars inside JSON string values (invalid JSON)
+  try {
+    const fixed = text.replace(/"((?:[^"\\]|\\.)*)"/gs, (match) =>
+      match.replace(/\r?\n/g, "\\n")
+    );
+    return JSON.parse(fixed);
+  } catch {}
+  return null;
+}
+
 /** Ensure message content is always a clean displayable string */
 function sanitizeContent(content: unknown): string {
   if (typeof content === "string") {
     // If it looks like a raw JSON object, try to extract the message field
     const trimmed = content.trim();
     if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (typeof parsed.message === "string") return parsed.message;
-      } catch {
-        // Not valid JSON, return as-is
-      }
+      const parsed = tryParseJson(trimmed);
+      if (parsed && typeof parsed.message === "string") return fixNewlines(parsed.message);
     }
-    return content;
+    return fixNewlines(content);
   }
   // If content is an object (e.g. loaded from storage incorrectly)
   if (content && typeof content === "object") {
     const obj = content as Record<string, unknown>;
-    if (typeof obj.message === "string") return obj.message;
+    if (typeof obj.message === "string") return fixNewlines(obj.message);
     // Last resort: stringify it cleanly
     return JSON.stringify(content);
   }

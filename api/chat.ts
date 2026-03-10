@@ -262,8 +262,9 @@ RECOMMENDATION RULES (CRITICAL — NEVER VIOLATE THESE):
 - Good: "ask your school's business teacher if there are any business competitions against other schools you could enter"
 - Good: "email your school counselor and ask what entrepreneurship clubs or competitions other students have done"
 - Bad: "join DECA" / "look into Junior Achievement" / "sign up for FBLA" — NEVER DO THIS
-- Every action step should be something the student can do THIS WEEK by talking to a specific person or going to a specific place they already have access to — their teacher, their counselor, their school notice board, a classmate.
-- Never tell the student to "research" or "look into" something — that is not an action step. An action step names WHO to talk to or WHERE to go.
+- Every action step must be ONE tiny thing that takes under 5 minutes and requires zero preparation. Not a project, not a plan, not a conversation with authority figures. The action is the FIRST small move, not the whole roadmap. Good: "Text your church group chat right now and say hey I want to help run the next event." Good: "Open Instagram and DM one person who posted about a business competition asking how they got involved." Good: "Write down three things that annoy you about the church check-in system in your notes app — that's your project idea for later." Bad: "Talk to your teacher." Bad: "Find your counselor." Bad: "Set up a meeting with your coach." If talking to someone is genuinely the best next step, frame it as secondary: "If you run into your business teacher today, ask them X — but right now, just open your notes app and write down Y."
+- Never tell the student to "research" or "look into" something — that is not an action step. An action step is something they can do in the next 5 minutes on their phone.
+- NEVER give the whole roadmap or multi-step plan in a single response. Give ONE tiny action. If the student wants the bigger plan, they'll ask a follow-up and you break it down step by step.
 - NEVER use compound academic jargon. No "inter-school", "intra-team", "co-curricular", "extra-curricular", or similar hyphenated terms. Use plain language a student would actually say — "between schools", "against other schools", "within your team", "outside of class", "activities outside your classes". If it sounds like a guidance counsellor wrote it, rewrite it.
 
 PROGRAM FIT ANALYSIS:
@@ -293,7 +294,7 @@ SUGGESTIONS RULE (CRITICAL):
 
 Rules:
 - Always reference the student's actual activities by name — never give generic advice
-- Maximum 3 action items per response
+- Maximum 1 action item per response — one tiny 5-minute task, not a roadmap
 - Keep the overall response concise — say more with fewer words. Cut filler and fluff.
 - If the student asks something outside your scope, gently redirect to extracurricular/university planning
 ${pendingActions?.length ? `
@@ -323,12 +324,11 @@ PARAGRAPH 3 (2-3 sentences): The biggest gap. Start with "Honestly?" or "Real ta
 
 PARAGRAPH 4 (2-3 sentences): ONLY include this if their activities genuinely suggest a better-fitting program than what they've targeted. Say it directly: "Have you thought about [type of program] instead? Your [specific activities] align way more naturally there." If their activities DO match their target programs well, SKIP this paragraph entirely.
 
-PARAGRAPH 5 (action step — this should be the longest paragraph, 5-7 sentences): Never just say "talk to someone." Follow this structure exactly:
-- First, name which EXISTING activity or project the student should BUILD ON — not start something new. E.g. "Take Kairo and turn it into an actual student startup" not "start a business."
-- Then explain why this works by connecting to their existing validation — e.g. "you already have users saying it's useful — that's real validation."
-- Give 2-3 specific next moves they can take THIS WEEK, each concrete — e.g. "talk to your business teacher, ask about entrepreneurship programs, pitch competitions, or mentorship opportunities in your district."
-- Include a word-for-word script: "Frame it as: 'I built this tool students are using, I want to turn it into something bigger — what resources exist for that?'"
-- End with one sentence explaining how this action closes their biggest gap — e.g. "That gives you the business leadership depth you're missing while leveraging what you're already great at."
+PARAGRAPH 5 (action step — 2-3 sentences, NOT a roadmap): Give exactly ONE tiny action the student can do in under 5 minutes from their phone right now. Not a project, not a plan — just the first small move. Follow this structure:
+- Name which EXISTING activity or project to build on — not something new.
+- Give ONE specific 5-minute action with a word-for-word script if it involves messaging someone. E.g. "Pull out your phone and text 3 friends: 'Hey be honest — would you pay $2/month for Kairo? I'm trying to figure out if this is a real thing.'" or "Open your notes app and write down the 3 biggest problems with how your church handles volunteer sign-ups — that's your project seed."
+- End by teasing that there's a bigger plan behind this: "That's step one — ask me and I'll break down the full game plan."
+- NEVER give 2-3 next moves or a multi-step plan here. One action only. Save the roadmap for when they ask.
 
 Every sentence should feel like it could only be written for THIS specific student. If you could swap in a different student's name and the sentence still works, rewrite it.
 
@@ -346,7 +346,7 @@ Rules:
 - Reference the student's actual activities by name with specific details — never give generic advice
 - NEVER name a specific program, competition, or organization (no DECA, no FBLA, no Junior Achievement, etc). Instead describe the TYPE of activity and tell them who to ask.
 - NEVER use academic jargon — no "demonstrated", "measurable", "at scale", "co-curricular", "inter-school". Use words a student would actually say.
-- The action step must be immediately actionable this week — name a specific person to talk to or place to go, never say "research" or "look into"
+- The action step must be ONE tiny thing that takes under 5 minutes from their phone — a single DM, a single note, a single text. Not a project or plan. Never "talk to your teacher" as a primary action. Save the bigger roadmap for follow-ups.
 - suggestions should be 2-3 follow-up questions that tee up deeper topics you DIDN'T cover (other gaps, program fit, strategy)
 - Return ONLY valid JSON, no extra text`;
   }
@@ -366,7 +366,7 @@ Respond with a JSON object in this exact format:
 {
   "message": "Your response with markdown formatting. Use \\n\\n between paragraphs. Use **bold** for emphasis. Use numbered lists (1. 2. 3.) on separate lines when listing multiple points.",
   "suggestions": ["A follow-up question the student might ask next", "Another contextual suggestion"],
-  "actionItems": [{"action": "One short sentence, max 15 words — e.g. 'Ask your art teacher about portfolio reviews this week.'", "gap": "short label"}]
+  "actionItems": [{"action": "ONE tiny 5-min task — e.g. 'Open your notes app and list 3 things that bug you about the sign-up process.'", "gap": "short label"}]
 }
 
 Rules:
@@ -604,22 +604,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const cleaned = advisorTextBlock.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
 
-      // Both first and follow-up messages use the same response format
-      try {
-        const parsed = JSON.parse(cleaned);
-        // Ensure message is a string, not a nested object
-        const message = typeof parsed.message === "string"
-          ? parsed.message
-          : cleaned.replace(/[{}[\]"]/g, "").trim();
+      // Parse JSON with fallback for common LLM issues (actual newlines inside strings)
+      let parsed: Record<string, unknown> | null = null;
+
+      try { parsed = JSON.parse(cleaned); } catch {}
+
+      // Fix: LLMs sometimes put actual newline chars inside JSON strings (invalid JSON)
+      if (!parsed) {
+        try {
+          const fixed = cleaned.replace(/"((?:[^"\\]|\\.)*)"/gs, (match) =>
+            match.replace(/\r?\n/g, "\\n")
+          );
+          parsed = JSON.parse(fixed);
+        } catch {}
+      }
+
+      if (parsed && typeof parsed.message === "string") {
+        // Convert any double-escaped \\n to real newlines
+        const message = (parsed.message as string).replace(/\\n/g, "\n");
         return res.status(200).json({
           message,
           suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
           actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : [],
         });
-      } catch {
-        // Model returned plain text instead of JSON — use it directly
-        return res.status(200).json({ message: cleaned });
       }
+
+      // Last resort: return cleaned text
+      return res.status(200).json({ message: cleaned });
     }
 
     let userPrompt: string;
