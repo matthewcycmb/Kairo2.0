@@ -99,8 +99,8 @@ Respond with a JSON object in this exact format:
       "id": "act_1",
       "name": "Activity Name",
       "category": "one of: Academics | Sports | Arts & Music | Volunteering | Clubs | Work & Leadership | Certifications",
-      "description": "A 1-2 sentence summary of the activity. Do NOT include hours, duration, or achievements here.",
-      "details": ["Specific facts not in the description — responsibilities, projects, events"],
+      "description": "A 2-3 sentence ENRICHED summary that makes the activity sound impressive and detailed — way better than what the student typed. See ENRICHMENT RULE below.",
+      "details": ["Specific facts not in the description — responsibilities, projects, events. Infer reasonable context even from minimal input."],
       "yearsActive": "e.g. Grade 9-11 or 2 years (if mentioned)",
       "role": "their role if mentioned",
       "achievements": ["Only standout accomplishments: awards, certifications, competitions, leadership titles"],
@@ -120,9 +120,13 @@ Respond with a JSON object in this exact format:
 }
 
 Rules:
+- ENRICHMENT RULE (CRITICAL): Do NOT just reorganize the student's words. TRANSFORM them. Every description must sound noticeably better than what the student typed — add context, implications, and depth they didn't think to include. If the student wrote 5 words, the profile entry should be 2-3 rich sentences.
+  - Student writes: "I play badminton for my school" → BAD: "Plays badminton for school team." → GOOD: "Member of the school's competitive badminton team, competing in singles and doubles matches at the regional level. Develops strategic game sense and individual performance under pressure during tournament play."
+  - Student writes: "I volunteer at my church" → BAD: "Volunteers at church." → GOOD: "Active volunteer within the church community, contributing to weekly service coordination and community outreach events. Supports the congregation's mission through hands-on involvement in organizing programs that serve local families."
+  - The key: infer reasonable context from minimal input. A school badminton player likely competes regionally. A church volunteer likely helps with events and community programs. Add these plausible details to make the profile compelling.
 - Generate a unique id for each activity (act_1, act_2, etc.) and question (q_1, q_2, etc.)
 - CRITICAL: Do not duplicate information across fields. Each fact goes in exactly ONE place:
-  - "description": 1-2 sentence summary only
+  - "description": 2-3 sentence enriched summary
   - "details": specific facts NOT already in the description
   - "yearsActive": duration ONLY goes here
   - "hoursPerWeek": time commitment ONLY goes here (as a number)
@@ -159,8 +163,8 @@ Respond with a JSON object in this exact format:
       "id": "act_1",
       "name": "Activity Name",
       "category": "Category",
-      "description": "A 1-2 sentence summary of what this activity is and the student's involvement. Do NOT include hours, duration, or achievements here.",
-      "details": ["Specific facts NOT already in the description — e.g. specific responsibilities, projects, events. Do NOT repeat hours, duration, or role here."],
+      "description": "A 2-3 sentence ENRICHED summary that makes the activity sound impressive and detailed — transform the student's words, don't just reorganize them. Add context, implications, and depth.",
+      "details": ["Specific facts NOT already in the description — e.g. specific responsibilities, projects, events. Infer reasonable context from answers."],
       "yearsActive": "updated if answered",
       "role": "updated if answered",
       "achievements": ["Only standout accomplishments: awards, certifications, competitions, leadership titles. NOT hours or duration."],
@@ -174,8 +178,9 @@ Respond with a JSON object in this exact format:
 
 Rules:
 - Merge the answers into the existing activity data
+- ENRICHMENT RULE: When merging answers, don't just append facts — rewrite the description to sound richer and more impressive. Transform the student's casual answers into polished, compelling profile language. Add context and implications they didn't think to include.
 - CRITICAL: Do not duplicate information across fields. Each fact should appear in exactly ONE place:
-  - "description": 1-2 sentence summary of the activity
+  - "description": 2-3 sentence enriched summary of the activity
   - "details": specific facts, responsibilities, projects — things not in the description
   - "yearsActive": duration info ONLY goes here
   - "hoursPerWeek": time commitment ONLY goes here (as a number)
@@ -266,6 +271,14 @@ RECOMMENDATION RULES (CRITICAL — NEVER VIOLATE THESE):
 - Never tell the student to "research" or "look into" something — that is not an action step. An action step is something they can do in the next 5 minutes on their phone.
 - Always close an action step with one sentence tying the action back to the gap and the goal. E.g. "That gives you the business leadership depth you're missing while leveraging what you're already great at." Never end with "ask me for more" — end with a confident, complete thought.
 - NEVER use compound academic jargon. No "inter-school", "intra-team", "co-curricular", "extra-curricular", or similar hyphenated terms. Use plain language a student would actually say — "between schools", "against other schools", "within your team", "outside of class", "activities outside your classes". If it sounds like a guidance counsellor wrote it, rewrite it.
+
+CREATIVE CROSS-ACTIVITY IDEAS (CRITICAL):
+- After identifying gaps, you MUST suggest at least one specific opportunity that CONNECTS two or more activities the student already has in a way they wouldn't have thought of themselves. Never suggest generic activities like "join a business club" or "find leadership opportunities."
+- The idea should combine their existing skills/communities into something new and specific. Look at their profile and ask: "What could this student build/create/start that uses Activity A's skills inside Activity B's community?"
+- Good: "You could combine your sports background with your tech skills — build a simple app that helps your badminton club manage tournament brackets or track player stats. That's a real product with real users in a community you already belong to, and it's a way better business story than joining a random club."
+- Good: "You're already doing photography for the athletics department and you know how to go viral — what if you started offering that as a service to other school teams or local sports leagues? That's freelance business experience using skills you already have."
+- Bad: "You should join a business club." / "Look for leadership opportunities." / "Get more business experience." — these are generic and useless.
+- The suggestion should make the student think "oh wow I never thought of combining those things" — that's the value you provide that a generic counsellor can't.
 
 PROGRAM FIT ANALYSIS (MANDATORY):
 - ALWAYS analyze the student's profile against their target university/program and look for mismatches.
@@ -475,7 +488,7 @@ Respond with JSON containing the full updated activity:
     "id": "...",
     "name": "...",
     "category": "...",
-    "description": "A richer 1-2 sentence summary weaving in the new depth. Do NOT include hours, duration, or achievements here.",
+    "description": "A richer 2-3 sentence summary weaving in the new depth. Transform the student's words into impressive, compelling language — don't just reorganize what they said.",
     "details": ["Expanded details including new specifics from answers. Each detail should be unique."],
     "yearsActive": "...",
     "role": "...",
