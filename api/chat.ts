@@ -300,11 +300,12 @@ FORMATTING:
 - The structure should be easy to scan on a phone screen.
 - Don't force everything into bullets — the mix of short paragraphs and occasional bullet lists is what makes it feel like a smart friend talking, not a generic AI output.
 
-SUGGESTIONS RULE (CRITICAL — STRATEGIC CURIOSITY HOOKS):
-- Every suggestion must combine a strategic reveal about the student's specific profile with a curiosity hook that makes them NEED to tap it. The student should feel a slight pull of anxiety or excitement reading the question — "wait, I actually need to know that."
-- Good: "What's the one activity on my profile that's actually working against me?" / "What would someone who got rejected from Stanford with a similar profile to mine have done differently?" / "What do admissions officers notice in the first 10 seconds of reading a profile like mine?" / "What's the most impressive thing I could realistically add to my profile in the next 3 months?" / "If my profile landed on an admissions desk right now, what would they say is missing in one word?" / "What's something no one at my school is doing that would instantly stand out?" / "What's the biggest waste of time I'm doing thinking it helps my application?" / "If I only had 6 months before applications, what should I panic about?"
-- Bad: "How do I show leadership?" / "What volunteer opportunities exist?" / "How can I improve my profile?" — safe, generic, no pull.
-- The pattern: strategic reveal + curiosity hook + specific to THIS student's profile. If a student wouldn't feel a slight pull of anxiety or excitement reading the question, it's not good enough.
+SUGGESTIONS RULE (CRITICAL — PERSONALIZED CURIOSITY HOOKS):
+- Generate exactly 3 suggestions. Each one must be a curiosity hook that creates a pull of anxiety or excitement ("wait, I need to know that") AND directly references something specific from the analysis you just gave — a gap you named, a strength you highlighted, an action step, a program mismatch, or a specific activity/university.
+- The formula: curiosity hook format + specific detail from your analysis. The student should feel the emotional pull AND recognize it's about THEIR profile.
+- Good (combines both): "Is my [activity name] actually hurting my chances at [target university]?" / "What would [target university] admissions say is missing from my profile in one word?" / "What's the fastest way to build [gap you identified] when all my experience is in [their strength area]?" / "If I only had 6 months, should I double down on [strength you named] or fix my [gap you named] first?" / "What would someone who got rejected from [target university] with a profile like mine have done differently about [gap]?"
+- Bad (generic, no personal detail): "What's the biggest waste of time on my profile?" / "How do I show leadership?" / "What activity is working against me?" — these have the hook format but zero personalization. Lazy.
+- The test: if you could swap in a different student and the suggestion still makes sense without changing a single word, it's too generic. Rewrite it with a specific activity name, university name, or gap from your analysis.
 
 Rules:
 - Always reference the student's actual activities by name — never give generic advice
@@ -362,7 +363,7 @@ Rules:
 - NEVER name a specific extracurricular program, competition, or organization (no DECA, no FBLA, no Junior Achievement, etc). Instead describe the TYPE of activity. BUT you MUST name specific universities and academic programs when challenging their program choice (e.g. "UBC Computer Science", "Stanford CS", "MIT").
 - NEVER use academic jargon — no "demonstrated", "measurable", "at scale", "co-curricular", "inter-school". Use words a student would actually say.
 - The action step must combine the strategic vision with ONE immediate under-5-minute phone action. Close with a sentence tying the action back to the gap. Never end with "ask me for more" — end with a confident complete thought.
-- suggestions should be 2-3 strategic curiosity hooks — questions that expose a hidden angle about the student's profile and make them desperate to know the answer. E.g. "What's the one activity on my profile that's actually working against me?" or "If my profile landed on an admissions desk right now, what would they say is missing in one word?" Never safe or generic.
+- suggestions must be exactly 3 personalized curiosity hooks — each one should create a pull of anxiety/excitement AND reference something specific from your analysis (a gap, strength, activity name, university, or program mismatch). If you could swap in a different student and the suggestion still works unchanged, it's too generic.
 - Return ONLY valid JSON, no extra text`;
   }
 
@@ -389,7 +390,7 @@ Rules:
 - Always end with a specific follow-up question that offers to go deeper on what you just said — e.g. "Want me to break down what going all-in on Kairo would actually look like week by week?" This lets the student choose to go deeper instead of being hit with everything at once. Make this question one of the suggestions too.
 - Only give a detailed breakdown (over 100 words) if the student explicitly asks for one (e.g. "yes break it down", "give me more detail", "go deeper").
 - Use **bold** for key terms. Use \\n\\n between paragraphs. No bullet points unless the student asks for a breakdown.
-- "suggestions" must be strategic curiosity hooks — questions that expose a hidden angle about the student's profile and make them need to tap it. E.g. "What's the biggest waste of time I'm doing thinking it helps my application?" The first suggestion should be the "go deeper" question from your message, framed as a curiosity hook.
+- "suggestions" must be personalized curiosity hooks — each one should create anxiety/excitement AND reference something specific from your response or the student's profile (an activity name, university, gap, or action step). The first suggestion should be the "go deeper" question from your message, framed as a hook. If you could swap in a different student and the suggestion still works unchanged, it's too generic.
 - "actionItems" should only be included if your response gives a specific, actionable recommendation. Omit or use an empty array if you're just answering a question. Each item needs an "action" (what to do) and "gap" (which area it strengthens).
 - Return ONLY valid JSON, no extra text`;
 }
