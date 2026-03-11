@@ -12,7 +12,7 @@ const supabase = createClient(
 // --- Rate limiting for writes/lookups ---
 const RATE_WINDOW_MS = 60_000;
 const RATE_MAX_CREATE = 5; // profile creates per minute per IP
-const RATE_MAX_LOOKUP = 15; // identifier lookups per minute per IP
+const RATE_MAX_LOOKUP = 5; // identifier lookups per minute per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 function checkRate(key: string, max: number): boolean {

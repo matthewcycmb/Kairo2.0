@@ -100,7 +100,7 @@ export default function GoalSetupPage({ onComplete }: GoalSetupPageProps) {
 
         <div className="mt-6 flex items-center justify-between">
           <span className="text-xs text-white/30">
-            Universities & location are optional
+            Your info is only used to personalize your profile. We don't share it with anyone.
           </span>
           <button
             onClick={handleContinue}
