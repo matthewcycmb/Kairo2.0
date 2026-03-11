@@ -23,20 +23,12 @@ function isEmail(identifier: string): boolean {
 
 function reengagementHtml(profileUrl: string): string {
   return `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 16px;">
-      <h2 style="font-size: 20px; color: #111;">Your Kairo profile is waiting</h2>
-      <p style="font-size: 15px; color: #444; line-height: 1.6;">
-        You built a great activity profile — but there's more you can do with it.
-      </p>
-      <p style="font-size: 15px; color: #444; line-height: 1.6;">
-        Your <strong>Advisor</strong> can give you personalized advice, and the <strong>Application Writer</strong> can help you draft answers tailored to your activities.
-      </p>
-      <a href="${profileUrl}" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: #111; color: #fff; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 500;">
-        Open my profile
-      </a>
-      <p style="font-size: 12px; color: #999; margin-top: 32px;">
-        Kairo — your extracurricular profile builder
-      </p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 16px; font-size: 15px; color: #333; line-height: 1.7;">
+      <p>Hey!</p>
+      <p>Your Kairo Advisor went through everything you submitted and flagged some gaps that admissions officers actually look for.</p>
+      <p>Not trying to freak you out, just better to know now than when you're mid-application.</p>
+      <p><a href="${profileUrl}" style="color: #111; font-weight: 500;">${profileUrl}</a></p>
+      <p>Matthew</p>
     </div>
   `;
 }
@@ -94,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await resend.emails.send({
           from: FROM_EMAIL,
           to: row.identifier,
-          subject: "Your Kairo profile is waiting",
+          subject: "[ URGENT ] your profile has gaps",
           html: reengagementHtml(profileUrl),
         });
 

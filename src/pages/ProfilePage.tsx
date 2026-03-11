@@ -843,13 +843,13 @@ export default function ProfilePage({
           <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setShowSavePopover(false)} />
           <div className="fixed left-1/2 top-1/2 z-50 w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/[0.15] bg-white/[0.08] p-6 shadow-2xl backdrop-blur-[40px]">
             <h3 className="mb-2 text-base font-semibold text-white">Save my profile</h3>
-            <p className="mb-4 text-sm text-white/50">Enter your email or Instagram so you can find your profile later.</p>
+            <p className="mb-4 text-sm text-white/50">Enter your email so you can find your profile later.</p>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={identifierInput}
                 onChange={(e) => setIdentifierInput(e.target.value)}
-                placeholder="Your email or Instagram"
+                placeholder="you@gmail.com"
                 className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-white/25 focus:outline-none"
                 onKeyDown={(e) => e.key === "Enter" && handleSaveIdentifier()}
                 autoFocus
