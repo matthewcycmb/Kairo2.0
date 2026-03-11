@@ -11,12 +11,13 @@ export default function GoalSetupPage({ onComplete }: GoalSetupPageProps) {
   const [grade, setGrade] = useState<9 | 10 | 11 | 12 | null>(null);
   const [targetUniversities, setTargetUniversities] = useState("");
   const [location, setLocation] = useState("");
+  const [email, setEmail] = useState("");
 
   const canContinue = grade !== null;
 
   const handleContinue = () => {
     if (!grade) return;
-    onComplete({ grade, targetUniversities: targetUniversities.trim(), location: location.trim() });
+    onComplete({ grade, targetUniversities: targetUniversities.trim(), location: location.trim(), email: email.trim() || undefined });
   };
 
   return (
@@ -78,6 +79,20 @@ export default function GoalSetupPage({ onComplete }: GoalSetupPageProps) {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g. Vancouver, BC"
+              className="w-full rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-white/80">
+              Your email or Instagram
+            </label>
+            <input
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="so you can find your profile later"
               className="w-full rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
             />
           </div>

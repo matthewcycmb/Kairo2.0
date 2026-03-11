@@ -18,6 +18,7 @@ export interface StudentGoals {
   grade: 9 | 10 | 11 | 12;
   targetUniversities: string;
   location: string;
+  email?: string;
 }
 
 export interface AdvisorAnalysis {

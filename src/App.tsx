@@ -6,10 +6,9 @@ import BrainDumpPage from "./pages/BrainDumpPage";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import GoalSetupPage from "./pages/GoalSetupPage";
-import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, saveActionItems, loadActionItems, updateActionItem, listConversations, deleteConversation } from "./lib/profileApi";
+import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, saveActionItems, loadActionItems, updateActionItem, listConversations, deleteConversation, saveIdentifier } from "./lib/profileApi";
 import type { ConversationSummary } from "./types/profile";
 import { callApi } from "./lib/apiClient";
-import { formatProfileAsText } from "./lib/profileUtils";
 import { Analytics } from "@vercel/analytics/react";
 
 const initialProfileId = new URLSearchParams(window.location.search).get("p");
@@ -43,7 +42,6 @@ function App() {
   const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>(cachedProfile?.advisorMessages || []);
   const [advisorLoading, setAdvisorLoading] = useState(false);
   const [refreshingAnalysis, setRefreshingAnalysis] = useState(false);
-  const [refreshingProfile, setRefreshingProfile] = useState(false);
   const [actionItems, setActionItems] = useState<ActionItem[]>(cachedProfile?.actionItems || []);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [latestConvId, setLatestConvId] = useState<string | null>(null);
@@ -141,6 +139,9 @@ function App() {
       if (profileId) debouncedSave(profileId, next);
       return next;
     });
+    if (profileId && goals.email) {
+      saveIdentifier(profileId, goals.email).catch(console.error);
+    }
     setCurrentView("profile");
   };
 
@@ -518,28 +519,6 @@ function App() {
     }
   };
 
-  const handleRefreshProfile = async () => {
-    setRefreshingProfile(true);
-    try {
-      const text = formatProfileAsText(profile);
-      const response = await callApi({ type: "parse", text });
-      const refreshed = {
-        ...profile,
-        activities: response.activities,
-        lastUpdated: new Date(),
-      };
-      setProfile(refreshed);
-      if (profileId) {
-        try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(refreshed)); } catch {}
-        await updateProfile(profileId, refreshed);
-      }
-    } catch (err) {
-      console.error("Refresh profile error:", err);
-    } finally {
-      setRefreshingProfile(false);
-    }
-  };
-
   const handleStartOver = () => {
     if (profileId) try { localStorage.removeItem(`kairo_profile_${profileId}`); } catch {}
     setCurrentView("input");
@@ -600,8 +579,6 @@ function App() {
           actionItems={actionItems}
           onToggleActionItem={handleToggleActionItem}
           profileId={profileId}
-          onRefreshProfile={handleRefreshProfile}
-          refreshingProfile={refreshingProfile}
           onLoadConversation={handleLoadConversation}
           onBackToCurrent={handleBackToCurrent}
           onDeleteConversation={handleDeleteConversation}

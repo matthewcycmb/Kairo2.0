@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import type { ParsedActivity } from "../types/activity";
 import type { StudentProfile, FollowUpQuestion, AdvisorMessage, ActionItem, ConversationSummary } from "../types/profile";
-import { groupByCategory, copyProfileToClipboard } from "../lib/profileUtils";
+import { groupByCategory } from "../lib/profileUtils";
 import { callApi } from "../lib/apiClient";
 import { saveIdentifier } from "../lib/profileApi";
 import CategorySection from "../components/CategorySection";
@@ -42,8 +42,6 @@ interface ProfilePageProps {
   actionItems: ActionItem[];
   onToggleActionItem: (id: string) => void;
   profileId: string | null;
-  onRefreshProfile: () => void;
-  refreshingProfile: boolean;
   onLoadConversation: (convId: string) => void;
   onBackToCurrent: () => void;
   onDeleteConversation: (convId: string) => void;
@@ -69,8 +67,6 @@ export default function ProfilePage({
   onAdvisorTabOpened,
   onNewConversation,
   profileId,
-  onRefreshProfile,
-  refreshingProfile,
   onLoadConversation,
   onBackToCurrent,
   onDeleteConversation,
@@ -86,12 +82,10 @@ export default function ProfilePage({
   const [forgotQuestions, setForgotQuestions] = useState<FollowUpQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentActivityIdx, setCurrentActivityIdx] = useState(0);
-  const [copied, setCopied] = useState(false);
-  const [showSaveCard, setShowSaveCard] = useState(true);
+  const [showSavePopover, setShowSavePopover] = useState(false);
   const [identifierInput, setIdentifierInput] = useState("");
   const [identifierSaved, setIdentifierSaved] = useState(false);
   const [identifierSaving, setIdentifierSaving] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
   const [showResume, setShowResume] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showPrevChats, setShowPrevChats] = useState(false);
@@ -150,33 +144,13 @@ export default function ProfilePage({
       (q) => answers[q.id] !== undefined && answers[q.id] !== ""
     ) ?? false;
 
-  const handleCopy = async () => {
-    try {
-      await copyProfileToClipboard(profile);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setError("Failed to copy to clipboard");
-    }
-  };
-
-  const handleCopyLink = async () => {
-    if (!profileId) return;
-    try {
-      await navigator.clipboard.writeText(window.location.origin + "?p=" + profileId);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    } catch {
-      setError("Failed to copy link");
-    }
-  };
-
   const handleSaveIdentifier = async () => {
     if (!profileId || !identifierInput.trim()) return;
     setIdentifierSaving(true);
     try {
       await saveIdentifier(profileId, identifierInput.trim());
       setIdentifierSaved(true);
+      setShowSavePopover(false);
       setTimeout(() => setIdentifierSaved(false), 3000);
     } catch {
       setError("Failed to save identifier");
@@ -317,13 +291,12 @@ export default function ProfilePage({
           </div>
           {/* Desktop: buttons inline with title. Mobile: hidden here, shown below */}
           <div className="hidden shrink-0 items-center gap-2 sm:flex">
-            {activeTab === "profile" && (
+            {activeTab === "profile" && profileId && (
               <button
-                onClick={onRefreshProfile}
-                disabled={refreshingProfile}
-                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white disabled:opacity-40"
+                onClick={() => setShowSavePopover((v) => !v)}
+                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
               >
-                {refreshingProfile ? "Refreshing..." : "Refresh Profile"}
+                Save my profile
               </button>
             )}
             {activeTab === "advisor" && (
@@ -483,12 +456,6 @@ export default function ProfilePage({
                   <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
                   <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
                     <button
-                      onClick={() => { handleCopy(); setShowMenu(false); }}
-                      className="w-full px-4 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/[0.08]"
-                    >
-                      {copied ? "Copied!" : "Copy Profile"}
-                    </button>
-                    <button
                       onClick={() => { onStartOver(); setShowMenu(false); }}
                       className="w-full px-4 py-2.5 text-left text-sm text-white/60 transition-colors hover:bg-white/[0.08] hover:text-white/80"
                     >
@@ -505,13 +472,14 @@ export default function ProfilePage({
         <div className="mt-3 flex flex-wrap items-center gap-2 sm:hidden">
           {activeTab === "profile" && (
             <>
-              <button
-                onClick={onRefreshProfile}
-                disabled={refreshingProfile}
-                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white disabled:opacity-40"
-              >
-                {refreshingProfile ? "Refreshing..." : "Refresh"}
-              </button>
+              {profileId && (
+                <button
+                  onClick={() => setShowSavePopover((v) => !v)}
+                  className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+                >
+                  Save my profile
+                </button>
+              )}
               <button
                 onClick={() => setShowResume(true)}
                 className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
@@ -671,12 +639,6 @@ export default function ProfilePage({
                 <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
                 <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
                   <button
-                    onClick={() => { handleCopy(); setShowMenu(false); }}
-                    className="w-full px-4 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/[0.08]"
-                  >
-                    {copied ? "Copied!" : "Copy Profile"}
-                  </button>
-                  <button
                     onClick={() => { onStartOver(); setShowMenu(false); }}
                     className="w-full px-4 py-2.5 text-left text-sm text-white/60 transition-colors hover:bg-white/[0.08] hover:text-white/80"
                   >
@@ -738,27 +700,19 @@ export default function ProfilePage({
             </div>
           )}
 
-          {refreshingProfile ? (
-            <div className="py-24 text-center text-sm text-white/50">
-              Refreshing...
-            </div>
-          ) : (
-            <>
-              {Array.from(grouped.entries()).map(([category, activities]) => (
-                <CategorySection
-                  key={category}
-                  category={category}
-                  activities={activities}
-                  onEditActivity={onEditActivity}
-                />
-              ))}
+          {Array.from(grouped.entries()).map(([category, activities]) => (
+            <CategorySection
+              key={category}
+              category={category}
+              activities={activities}
+              onEditActivity={onEditActivity}
+            />
+          ))}
 
-              {profile.activities.length === 0 && (
-                <div className="py-12 text-center text-white/40">
-                  No activities yet. Something went wrong — try starting over.
-                </div>
-              )}
-            </>
+          {profile.activities.length === 0 && (
+            <div className="py-12 text-center text-white/40">
+              No activities yet. Something went wrong — try starting over.
+            </div>
           )}
 
           {isLoading && (
@@ -771,7 +725,7 @@ export default function ProfilePage({
             {forgotStep === "idle" && (
               <button
                 onClick={() => setForgotStep("input")}
-                className="w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-3 text-sm font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70"
+                className="w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-5 text-base font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70"
               >
                 + Add new activity
               </button>
@@ -866,42 +820,6 @@ export default function ProfilePage({
             )}
           </div>
 
-          {profileId && showSaveCard && (
-            <div className="relative mt-12 rounded-xl border border-white/[0.10] bg-white/[0.04] p-4">
-              <button
-                onClick={() => setShowSaveCard(false)}
-                className="absolute right-3 top-3 text-white/30 hover:text-white/60"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-              </button>
-              <h3 className="mb-3 text-sm font-semibold text-white">Save your profile</h3>
-              <button
-                onClick={handleCopyLink}
-                className="mb-3 w-full rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
-              >
-                {linkCopied ? "Copied!" : "Copy my profile link"}
-              </button>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={identifierInput}
-                  onChange={(e) => setIdentifierInput(e.target.value)}
-                  placeholder="Your Instagram or email"
-                  className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none"
-                  onKeyDown={(e) => e.key === "Enter" && handleSaveIdentifier()}
-                />
-                <button
-                  onClick={handleSaveIdentifier}
-                  disabled={!identifierInput.trim() || identifierSaving}
-                  className="shrink-0 rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.12] hover:text-white disabled:opacity-40"
-                >
-                  {identifierSaved ? "Saved!" : identifierSaving ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </div>
-          )}
         </>
       )}
 
@@ -919,6 +837,34 @@ export default function ProfilePage({
       <div className={activeTab === "apphelper" ? "flex-1" : "hidden"}>
         <AppHelper profile={profile} profileId={profileId} loadedSession={loadedSession} onSessionLoaded={() => setLoadedSession(null)} onSessionsChanged={onAppHelperSessionsChanged} />
       </div>
+
+      {showSavePopover && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setShowSavePopover(false)} />
+          <div className="fixed left-1/2 top-1/2 z-50 w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/[0.15] bg-white/[0.08] p-6 shadow-2xl backdrop-blur-[40px]">
+            <h3 className="mb-2 text-base font-semibold text-white">Save my profile</h3>
+            <p className="mb-4 text-sm text-white/50">Enter your email or Instagram so you can find your profile later.</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={identifierInput}
+                onChange={(e) => setIdentifierInput(e.target.value)}
+                placeholder="Your email or Instagram"
+                className="flex-1 rounded-lg border border-white/[0.10] bg-white/[0.06] px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-white/25 focus:outline-none"
+                onKeyDown={(e) => e.key === "Enter" && handleSaveIdentifier()}
+                autoFocus
+              />
+              <button
+                onClick={handleSaveIdentifier}
+                disabled={!identifierInput.trim() || identifierSaving}
+                className="shrink-0 rounded-lg border border-white/[0.10] bg-white/[0.10] px-5 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white disabled:opacity-40"
+              >
+                {identifierSaved ? "Saved!" : identifierSaving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {showResume && (
         <ResumeModal profile={profile} onClose={() => setShowResume(false)} />

@@ -23,17 +23,26 @@ function activityDetailCount(a: ParsedActivity): number {
 export function groupByCategory(
   activities: ParsedActivity[]
 ): Map<ActivityCategory, ParsedActivity[]> {
-  const grouped = new Map<ActivityCategory, ParsedActivity[]>();
+  // Build groups using stable CATEGORY_ORDER as a tiebreaker
+  const groups: { category: ActivityCategory; activities: ParsedActivity[]; weight: number }[] = [];
 
   for (const category of CATEGORY_ORDER) {
     const matching = activities
       .filter((a) => a.category === category)
       .sort((a, b) => activityDetailCount(b) - activityDetailCount(a));
     if (matching.length > 0) {
-      grouped.set(category, matching);
+      const weight = matching.reduce((sum, a) => sum + activityDetailCount(a), 0);
+      groups.push({ category, activities: matching, weight });
     }
   }
 
+  // Sort categories by total weight (highest impact first)
+  groups.sort((a, b) => b.weight - a.weight);
+
+  const grouped = new Map<ActivityCategory, ParsedActivity[]>();
+  for (const g of groups) {
+    grouped.set(g.category, g.activities);
+  }
   return grouped;
 }
 
