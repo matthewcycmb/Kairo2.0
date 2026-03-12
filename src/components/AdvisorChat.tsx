@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef, type ComponentPropsWithoutRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, type ComponentPropsWithoutRef } from "react";
 import type { AdvisorMessage } from "../types/profile";
 import ReactMarkdown from "react-markdown";
 import ChatBubble from "./ChatBubble";
-import LoadingSpinner from "./LoadingSpinner";
 
 /** Fix literal \n sequences to real newlines */
 function fixNewlines(text: string): string {
@@ -43,6 +42,74 @@ function sanitizeContent(content: unknown): string {
   return String(content ?? "");
 }
 
+/** Typewriter hook — reveals text word by word */
+function useTypewriter(text: string, active: boolean, speed: number = 18) {
+  const [wordCount, setWordCount] = useState(0);
+  const words = useMemo(() => text.split(/(\s+)/), [text]);
+  const totalWords = words.length;
+
+  useEffect(() => {
+    if (!active) {
+      setWordCount(totalWords);
+      return;
+    }
+    setWordCount(0);
+    let i = 0;
+    const interval = setInterval(() => {
+      // Reveal 1-3 tokens per tick for natural pacing
+      const step = i < 10 ? 1 : i < 40 ? 2 : 3;
+      i = Math.min(i + step, totalWords);
+      setWordCount(i);
+      if (i >= totalWords) clearInterval(interval);
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, active, totalWords, speed]);
+
+  return {
+    displayedText: words.slice(0, wordCount).join(""),
+    isDone: wordCount >= totalWords,
+  };
+}
+
+/** Typing indicator — three pulsing dots */
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-1 py-4 px-1">
+      <div className="h-2 w-2 rounded-full bg-white/40 animate-[pulse_1.4s_ease-in-out_infinite]" />
+      <div className="h-2 w-2 rounded-full bg-white/40 animate-[pulse_1.4s_ease-in-out_0.2s_infinite]" />
+      <div className="h-2 w-2 rounded-full bg-white/40 animate-[pulse_1.4s_ease-in-out_0.4s_infinite]" />
+    </div>
+  );
+}
+
+/** A single AI message with optional typewriter effect */
+function AiMessage({
+  content,
+  isTyping,
+  onTypingDone,
+  markdownComponents,
+}: {
+  content: string;
+  isTyping: boolean;
+  onTypingDone: () => void;
+  markdownComponents: Record<string, React.ComponentType<ComponentPropsWithoutRef<"pre">>>;
+}) {
+  const sanitized = useMemo(() => sanitizeContent(content), [content]);
+  const { displayedText, isDone } = useTypewriter(sanitized, isTyping);
+
+  useEffect(() => {
+    if (isDone && isTyping) onTypingDone();
+  }, [isDone, isTyping, onTypingDone]);
+
+  return (
+    <div className="advisor-markdown text-base leading-[1.6]">
+      <ReactMarkdown components={markdownComponents}>
+        {isTyping ? displayedText : sanitized}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 interface AdvisorChatProps {
   advisorMessages: AdvisorMessage[];
   onNewMessage: (text: string) => void;
@@ -58,12 +125,43 @@ export default function AdvisorChat({
 }: AdvisorChatProps) {
   const [input, setInput] = useState("");
   const [copiedBlock, setCopiedBlock] = useState<string | null>(null);
+  const [typingId, setTypingId] = useState<string | null>(null);
+  const [typingDone, setTypingDone] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const prevMsgCountRef = useRef(advisorMessages.length);
 
+  // Detect when a new assistant message arrives and start typewriter
+  useEffect(() => {
+    const prevCount = prevMsgCountRef.current;
+    prevMsgCountRef.current = advisorMessages.length;
+
+    if (advisorMessages.length > prevCount) {
+      const newest = advisorMessages[advisorMessages.length - 1];
+      if (newest.role === "assistant") {
+        setTypingId(newest.id);
+        setTypingDone(false);
+      }
+    }
+  }, [advisorMessages]);
+
+  // Auto-scroll during typing and on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [advisorMessages, isLoading]);
+  }, [advisorMessages, isLoading, typingDone]);
+
+  // Scroll periodically while typewriter is active
+  useEffect(() => {
+    if (!typingId || typingDone) return;
+    const interval = setInterval(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 300);
+    return () => clearInterval(interval);
+  }, [typingId, typingDone]);
+
+  const handleTypingDone = useCallback(() => {
+    setTypingDone(true);
+  }, []);
 
   const handleSend = () => {
     const text = input.trim();
@@ -121,9 +219,10 @@ export default function AdvisorChat({
     },
   };
 
-  // Get suggestions from the last assistant message
+  // Get suggestions from the last assistant message — only show after typing finishes
   const lastAssistantMsg = [...advisorMessages].reverse().find((m) => m.role === "assistant");
-  const suggestions = !isLoading && lastAssistantMsg?.suggestions?.length
+  const isLastMsgTyping = typingId === lastAssistantMsg?.id && !typingDone;
+  const suggestions = !isLoading && !isLastMsgTyping && lastAssistantMsg?.suggestions?.length
     ? lastAssistantMsg.suggestions
     : [];
 
@@ -153,16 +252,19 @@ export default function AdvisorChat({
             {msg.role === "user" ? (
               <div className="text-base leading-relaxed">{msg.content}</div>
             ) : (
-              <div className="advisor-markdown text-base leading-[1.6]">
-                <ReactMarkdown components={markdownComponents}>{sanitizeContent(msg.content)}</ReactMarkdown>
-              </div>
+              <AiMessage
+                content={msg.content}
+                isTyping={typingId === msg.id && !typingDone}
+                onTypingDone={handleTypingDone}
+                markdownComponents={markdownComponents}
+              />
             )}
           </ChatBubble>
         ))}
 
-        {/* Suggestion chips */}
+        {/* Suggestion chips — fade in after typing completes */}
         {suggestions.length > 0 && (
-          <div className="flex flex-col items-start gap-1.5 pb-1 pt-3">
+          <div className="flex flex-col items-start gap-1.5 pb-1 pt-3 animate-[fadeIn_0.3s_ease-in]">
             {suggestions.map((s, i) => (
               <button
                 key={i}
@@ -175,7 +277,7 @@ export default function AdvisorChat({
           </div>
         )}
 
-        {isLoading && <LoadingSpinner message="Kairo is thinking..." />}
+        {isLoading && <TypingIndicator />}
 
         <div ref={bottomRef} />
       </div>
