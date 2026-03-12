@@ -6,15 +6,19 @@ interface ChatBubbleProps {
 export default function ChatBubble({ type, children }: ChatBubbleProps) {
   const isAi = type === "ai";
 
+  if (isAi) {
+    // AI messages: no bubble, just text flowing directly
+    return (
+      <div className="mb-6 text-white/90">
+        {children}
+      </div>
+    );
+  }
+
+  // User messages: subtle, right-aligned, minimal styling
   return (
-    <div className={`flex ${isAi ? "justify-start" : "justify-end"} mb-3`}>
-      <div
-        className={`rounded-2xl ${
-          isAi
-            ? "w-full max-w-[720px] bg-white/[0.06] text-white border border-white/[0.12] px-4 py-3 sm:px-6 sm:py-4"
-            : "max-w-[85%] bg-white/[0.04] text-white border border-white/[0.10] px-4 py-3 sm:px-6 sm:py-4"
-        }`}
-      >
+    <div className="flex justify-end mb-6">
+      <div className="max-w-[85%] rounded-2xl bg-white/[0.08] text-white/80 px-4 py-3">
         {children}
       </div>
     </div>

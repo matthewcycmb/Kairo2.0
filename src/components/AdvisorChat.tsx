@@ -229,12 +229,7 @@ export default function AdvisorChat({
   return (
     <div className="flex h-full flex-col gap-3">
       {/* Messages area */}
-      <div className="flex-1 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
-        {/* Intro header */}
-        <div className="mb-3 pb-3 border-b border-white/[0.08] text-center">
-          <h2 className="text-base font-semibold text-white/90">Kairo Advisor</h2>
-          <p className="text-sm text-white/40">Chat & receive personalized guidance based on your profile</p>
-        </div>
+      <div className="flex-1 overflow-y-auto px-2 sm:px-4 pt-4">
         {advisorMessages.length === 0 && !isLoading && !isRefreshing && (
           <div className="flex h-full items-center justify-center py-12">
             <p className="text-base text-white/40">Your advisor is getting ready...</p>
