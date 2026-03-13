@@ -280,7 +280,7 @@ How to write them:
 - Keep them short. 10-20 words. They should feel like a thought, not a prompt.
 
 BAD suggestions (advisor lecturing): "What steps are you taking to differentiate your volunteer work?" / "Have you considered how your coding skills could complement your business goals?"
-GOOD suggestions (student's inner voice): "Wait, does my channel already count as the business experience I've been looking for?" / "Am I only volunteering because it looks good?" / "What if I'm applying to the wrong program and I already know it?"
+GOOD suggestions (student's inner voice): "Wait, does my channel already count as the business experience I've been looking for?" / "Am I only volunteering because it looks good?" / "What if I'm applying to the wrong program and I already know it?"`;
 }
 
 function buildAdvisorUserPrompt(
