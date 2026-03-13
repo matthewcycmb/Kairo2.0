@@ -96,9 +96,9 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
   const canSubmit = text.trim().length >= 20 && !isLoading;
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center px-4 py-12">
-      {/* Title + subtitle pushed down with top spacer */}
-      <div className="flex flex-1 flex-col items-center justify-end pb-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center px-4 py-8 sm:py-12">
+      {/* Title + subtitle */}
+      <div className="flex flex-col items-center justify-end pb-8 pt-8 text-center sm:flex-1 sm:pb-10 sm:pt-0">
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
           Kairo
         </h1>
@@ -159,14 +159,14 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
       </div>
 
       {/* Social proof */}
-      <p className="mt-4 text-xs text-white/30">Used by students across Vancouver and Hong Kong</p>
+      <p className="mt-4 text-xs text-white/50">Used by students across Vancouver and Hong Kong</p>
 
       {/* Lookup — pushed to bottom */}
       <div className="mt-auto pt-12 text-center">
         {!showLookup ? (
           <button
             onClick={() => setShowLookup(true)}
-            className="text-sm text-white/40 transition-colors hover:text-white/60"
+            className="text-sm text-white/50 transition-colors hover:text-white/70"
           >
             Already have a profile? Find it here.
           </button>
@@ -184,7 +184,7 @@ export default function BrainDumpPage({ onSubmit, isLoading }: BrainDumpPageProp
               <button
                 onClick={handleLookup}
                 disabled={!lookupInput.trim() || lookupLoading}
-                className="shrink-0 rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/[0.22] disabled:opacity-40"
+                className="shrink-0 rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.22] disabled:opacity-40"
               >
                 {lookupLoading ? "Finding..." : "Find"}
               </button>

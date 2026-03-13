@@ -350,7 +350,7 @@ export default function ProfilePage({
                               className="min-w-0 flex-1 px-4 py-2.5 text-left"
                             >
                               <p className="truncate text-sm text-white/80">{conv.preview}</p>
-                              <p className="text-xs text-white/35">{formatRelativeTime(conv.timestamp)}</p>
+                              <p className="text-xs text-white/50">{formatRelativeTime(conv.timestamp)}</p>
                             </button>
                             <button
                               onClick={(e) => {
@@ -413,7 +413,7 @@ export default function ProfilePage({
                               className="min-w-0 flex-1 px-4 py-2.5 text-left"
                             >
                               <p className="truncate text-sm text-white/80">{session.question}</p>
-                              <p className="text-xs text-white/35">{formatRelativeTime(session.timestamp)}</p>
+                              <p className="text-xs text-white/50">{formatRelativeTime(session.timestamp)}</p>
                             </button>
                             <button
                               onClick={(e) => {
@@ -475,14 +475,14 @@ export default function ProfilePage({
               {profileId && (
                 <button
                   onClick={() => setShowSavePopover((v) => !v)}
-                  className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+                  className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
                 >
                   Save my profile
                 </button>
               )}
               <button
                 onClick={() => setShowResume(true)}
-                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
               >
                 Resume
               </button>
@@ -503,7 +503,7 @@ export default function ProfilePage({
                     setShowPrevChats((v) => !v);
                     if (!showPrevChats) onListConversations();
                   }}
-                  className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+                  className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
                 >
                   Previous chats
                 </button>
@@ -538,7 +538,7 @@ export default function ProfilePage({
                               className="min-w-0 flex-1 px-4 py-2.5 text-left"
                             >
                               <p className="truncate text-sm text-white/80">{conv.preview}</p>
-                              <p className="text-xs text-white/35">{formatRelativeTime(conv.timestamp)}</p>
+                              <p className="text-xs text-white/50">{formatRelativeTime(conv.timestamp)}</p>
                             </button>
                             <button
                               onClick={(e) => {
@@ -568,7 +568,7 @@ export default function ProfilePage({
                   setShowPrevSessions((v) => !v);
                   if (!showPrevSessions) refreshAppHelperSessions();
                 }}
-                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
               >
                 Previous sessions
               </button>
@@ -603,7 +603,7 @@ export default function ProfilePage({
                             className="min-w-0 flex-1 px-4 py-2.5 text-left"
                           >
                             <p className="truncate text-sm text-white/80">{session.question}</p>
-                            <p className="text-xs text-white/35">{formatRelativeTime(session.timestamp)}</p>
+                            <p className="text-xs text-white/50">{formatRelativeTime(session.timestamp)}</p>
                           </button>
                           <button
                             onClick={(e) => {
@@ -628,7 +628,7 @@ export default function ProfilePage({
           <div className="relative ml-auto">
             <button
               onClick={() => setShowMenu((v) => !v)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/[0.10] hover:text-white/80"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/[0.10] hover:text-white/80"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                 <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
@@ -675,13 +675,14 @@ export default function ProfilePage({
         </button>
         <button
           onClick={() => handleTabClick("apphelper")}
-          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+          className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
             activeTab === "apphelper"
               ? "bg-white/[0.15] text-white"
               : "text-white/50 hover:text-white/70"
           }`}
         >
-          Application Writer
+          <span className="sm:hidden">App Writer</span>
+          <span className="hidden sm:inline">Application Writer</span>
         </button>
       </div>
 

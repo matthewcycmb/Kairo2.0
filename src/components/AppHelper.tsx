@@ -188,14 +188,14 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
       <div className="rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
         <div className="mb-3 pb-3 border-b border-white/[0.08] text-center">
           <h2 className="text-base font-semibold text-white/90">Kairo Application Writer</h2>
-          <p className="text-sm text-white/40">Paste a question and get a personalized answer based on your profile</p>
+          <p className="text-sm text-white/50">Paste a question and get a personalized answer based on your profile</p>
         </div>
 
         {/* Step 1: Question input */}
         <label className="mb-1 block text-sm font-medium text-white/70">
           Application Question
         </label>
-        <p className="mb-3 text-xs text-white/35">
+        <p className="mb-3 text-xs text-white/50">
           e.g. "Describe your most meaningful extracurricular activity and what you learned from it."
         </p>
         <textarea
@@ -222,7 +222,7 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
             <button
               onClick={handleGetQuestions}
               disabled={question.trim().length < 5 || isLoading}
-              className="rounded-xl border border-white/[0.15] bg-white/[0.15] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/[0.22] disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-xl border border-white/[0.15] bg-white/[0.15] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.22] disabled:cursor-not-allowed disabled:opacity-40"
             >
               Next
             </button>
