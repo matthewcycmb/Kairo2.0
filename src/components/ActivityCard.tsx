@@ -151,11 +151,11 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
           className="w-full resize-none border-b-2 border-blue-400 bg-transparent text-sm leading-relaxed text-white/70 outline-none sm:text-base"
         />
       ) : (
-        <p className={`text-sm leading-relaxed text-white/70 sm:text-base ${collapsed ? "line-clamp-3 sm:line-clamp-none" : ""}`}>{activity.description}</p>
+        <p className={`text-sm leading-relaxed text-white/70 sm:text-base ${collapsed ? "line-clamp-3" : ""}`}>{activity.description}</p>
       )}
 
-      {/* Collapsible content: hidden on mobile when collapsed, always visible on sm+ */}
-      <div className={`${collapsed ? "hidden sm:block" : "block"}`}>
+      {/* Collapsible content */}
+      <div className={`${collapsed ? "hidden" : "block"}`}>
         {editing ? (
           <div className="mt-2 space-y-1.5">
             {draft.details.map((detail, i) => (
@@ -401,7 +401,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
       {collapsed && hasCollapsibleContent && !editing && (
         <button
           onClick={() => setCollapsed(false)}
-          className="mt-2 py-2 text-xs text-white/50 hover:text-white/60 sm:hidden"
+          className="mt-2 py-2 text-xs text-white/50 hover:text-white/60"
         >
           Show more...
         </button>

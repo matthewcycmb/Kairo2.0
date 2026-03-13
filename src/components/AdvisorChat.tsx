@@ -248,12 +248,12 @@ export default function AdvisorChat({
             <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
               <div className="text-4xl text-white/20 animate-pulse">&#10042;</div>
               <p className="text-center font-serif text-2xl leading-snug text-white/50">
-                Starting fresh...
+                Starting new advisor chat...
               </p>
             </div>
           )}
 
-          {advisorMessages.map((msg) => (
+          {!isRefreshing && advisorMessages.map((msg) => (
             <ChatBubble key={msg.id} type={msg.role === "user" ? "user" : "ai"}>
               {msg.role === "user" ? (
                 <div className="text-[16px] leading-relaxed">{msg.content}</div>
