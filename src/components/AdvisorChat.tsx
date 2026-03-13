@@ -43,7 +43,7 @@ function sanitizeContent(content: unknown): string {
 }
 
 /** Typewriter hook — reveals text word by word */
-function useTypewriter(text: string, active: boolean, speed: number = 18) {
+function useTypewriter(text: string, active: boolean, speed: number = 30) {
   const [wordCount, setWordCount] = useState(0);
   const words = useMemo(() => text.split(/(\s+)/), [text]);
   const totalWords = words.length;
@@ -235,20 +235,18 @@ export default function AdvisorChat({
 
         {/* Messages area — independently scrollable */}
         <div className="flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
-          {advisorMessages.length === 0 && !isLoading && !isRefreshing && (
-            <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
-              <div className="text-4xl text-white/20">&#10042;</div>
-              <p className="text-center font-serif text-2xl leading-snug text-white/50">
-                What's on your mind?
+          {isRefreshing && (
+            <div className="flex h-full flex-col items-center justify-center py-16">
+              <p className="text-center text-lg font-medium text-white/50">
+                Starting new advisor chat...
               </p>
             </div>
           )}
 
-          {isRefreshing && (
+          {!isRefreshing && !isLoading && advisorMessages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
-              <div className="text-4xl text-white/20 animate-pulse">&#10042;</div>
-              <p className="text-center font-serif text-2xl leading-snug text-white/50">
-                Starting new advisor chat...
+              <p className="text-center text-lg font-medium text-white/50">
+                What's on your mind?
               </p>
             </div>
           )}
@@ -269,7 +267,7 @@ export default function AdvisorChat({
           ))}
 
           {/* Suggestion chips — fade in after typing completes */}
-          {suggestions.length > 0 && (
+          {!isRefreshing && suggestions.length > 0 && (
             <div className="flex flex-col items-start gap-2.5 pb-4 pt-1 animate-[fadeIn_0.4s_ease-out]">
               {suggestions.map((s, i) => (
                 <button
@@ -289,7 +287,7 @@ export default function AdvisorChat({
         </div>
 
         {/* Input area — pinned to bottom */}
-        <div className="shrink-0 px-4 pb-4 pt-3 sm:px-6">
+        {!isRefreshing && <div className="shrink-0 px-4 pb-4 pt-3 sm:px-6">
           <div className="relative flex items-end rounded-2xl border border-white/[0.12] bg-white/[0.06]">
             <textarea
               ref={inputRef}
@@ -315,7 +313,7 @@ export default function AdvisorChat({
               </svg>
             </button>
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );
