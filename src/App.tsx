@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { AppView, AdvisorMessage, ActionItem, StudentGoals } from "./types/profile";
+import type { AppView, AdvisorMessage, StudentGoals } from "./types/profile";
 import type { ParsedActivity } from "./types/activity";
 import type { FollowUpRound, StudentProfile } from "./types/profile";
 import BrainDumpPage from "./pages/BrainDumpPage";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import GoalSetupPage from "./pages/GoalSetupPage";
-import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, saveActionItems, loadActionItems, updateActionItem, listConversations, deleteConversation, saveIdentifier } from "./lib/profileApi";
+import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdvisorMessages, listConversations, deleteConversation, saveIdentifier } from "./lib/profileApi";
 import type { ConversationSummary } from "./types/profile";
 import { callApi } from "./lib/apiClient";
 import { Analytics } from "@vercel/analytics/react";
@@ -42,7 +42,6 @@ function App() {
   const [advisorMessages, setAdvisorMessages] = useState<AdvisorMessage[]>(cachedProfile?.advisorMessages || []);
   const [advisorLoading, setAdvisorLoading] = useState(false);
   const [refreshingAnalysis, setRefreshingAnalysis] = useState(false);
-  const [actionItems, setActionItems] = useState<ActionItem[]>(cachedProfile?.actionItems || []);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [latestConvId, setLatestConvId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -74,15 +73,6 @@ function App() {
           setProfile(loaded);
           if (loaded.advisorMessages?.length) {
             setAdvisorMessages(loaded.advisorMessages);
-          }
-          if (loaded.actionItems?.length) {
-            // Migrate old format: completed:boolean → status:'pending'|'completed'
-            const migrated = loaded.actionItems.map((item) => ({
-              ...item,
-              status: ("status" in item ? item.status : ("completed" in item && (item as unknown as { completed: boolean }).completed) ? "completed" : "pending") as "pending" | "completed",
-              createdAt: item.createdAt || new Date().toISOString(),
-            }));
-            setActionItems(migrated);
           }
           setCurrentView("profile");
         } else {
@@ -174,24 +164,6 @@ function App() {
     });
   };
 
-  const addNewActionItems = (
-    items: { action: string; gap: string }[] | undefined,
-    currentItems: ActionItem[]
-  ): ActionItem[] => {
-    if (!items || items.length === 0) return currentItems;
-    const activeCount = currentItems.filter((i) => i.status === "pending").length;
-    const room = 2 - activeCount;
-    if (room <= 0) return currentItems;
-    const newItems: ActionItem[] = items.slice(0, room).map((item) => ({
-      id: crypto.randomUUID(),
-      action: item.action,
-      gap: item.gap,
-      status: "pending" as const,
-      createdAt: new Date().toISOString(),
-    }));
-    return [...currentItems, ...newItems];
-  };
-
   const handleAdvisorMessage = async (userText: string) => {
     const userMsg: AdvisorMessage = {
       id: crypto.randomUUID(),
@@ -206,15 +178,11 @@ function App() {
     setAdvisorLoading(true);
 
     try {
-      const updatedItems = [...actionItems];
-      const currentPending = updatedItems.filter((i) => i.status === "pending");
-
       const response = await callApi({
         type: "advisor",
         profile,
         messages: updatedMessages,
         isFirstMessage: false,
-        pendingActions: currentPending,
       });
 
       // Ensure message is always a plain string
@@ -237,24 +205,14 @@ function App() {
         latestConvMessagesRef.current = allMessages;
       }
 
-      // Add action items if room
-      const finalItems = addNewActionItems(response.actionItems, updatedItems);
-      setActionItems(finalItems);
-
-      // Persist to Supabase — await so data is saved reliably
+      // Persist to Supabase
       if (profileId) {
-        const newItems = finalItems.filter((item) => !updatedItems.some((old) => old.id === item.id));
-        await Promise.all([
-          saveAdvisorMessages(profileId, [userMsg, assistantMsg], conversationId ?? undefined).catch(console.error),
-          newItems.length > 0
-            ? saveActionItems(profileId, newItems).catch(console.error)
-            : Promise.resolve(),
-        ]);
+        await saveAdvisorMessages(profileId, [userMsg, assistantMsg], conversationId ?? undefined).catch(console.error);
       }
 
       // Also persist to profile blob immediately
       setProfile((prev) => {
-        const next = { ...prev, advisorMessages: allMessages, actionItems: finalItems, lastUpdated: new Date() };
+        const next = { ...prev, advisorMessages: allMessages, lastUpdated: new Date() };
         if (profileId) {
           try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
           updateProfile(profileId, next).catch(console.error);
@@ -282,16 +240,10 @@ function App() {
     try {
       // Step 1: Load from Supabase (silently — no loading spinner)
       let loadedMessages: AdvisorMessage[] = [];
-      let loadedItems: ActionItem[] = [];
 
       if (profileId) {
         try {
-          const [msgs, items] = await Promise.all([
-            loadAdvisorMessages(profileId),
-            loadActionItems(profileId),
-          ]);
-          loadedMessages = msgs;
-          loadedItems = items;
+          loadedMessages = await loadAdvisorMessages(profileId);
         } catch (err) {
           console.error("Failed to load from Supabase:", err);
         }
@@ -304,17 +256,6 @@ function App() {
           saveAdvisorMessages(profileId, advisorMessages).catch(console.error);
         }
       }
-      if (loadedItems.length === 0 && actionItems.length > 0) {
-        loadedItems = actionItems.map((item) => ({
-          ...item,
-          status: ("status" in item ? item.status : ("completed" in item && (item as unknown as { completed: boolean }).completed) ? "completed" : "pending") as "pending" | "completed",
-          createdAt: item.createdAt || new Date().toISOString(),
-        }));
-        if (profileId && loadedItems.length > 0) {
-          saveActionItems(profileId, loadedItems).catch(console.error);
-        }
-      }
-
       // Step 2: If messages exist → restore history (no spinner needed)
       if (loadedMessages.length > 0) {
         // Extract conversationId from loaded messages
@@ -335,7 +276,6 @@ function App() {
         }
         setAdvisorMessages(loadedMessages);
         latestConvMessagesRef.current = loadedMessages;
-        setActionItems(loadedItems);
         return;
       }
 
@@ -363,22 +303,14 @@ function App() {
 
       setAdvisorMessages([firstMsg]);
 
-      const updatedItems = addNewActionItems(response.actionItems, loadedItems);
-      setActionItems(updatedItems);
-
-      // Persist to Supabase — await so data is saved before user can close tab
+      // Persist to Supabase
       if (profileId) {
-        await Promise.all([
-          saveAdvisorMessages(profileId, [firstMsg], newConvId).catch(console.error),
-          updatedItems.length > 0
-            ? saveActionItems(profileId, updatedItems).catch(console.error)
-            : Promise.resolve(),
-        ]);
+        await saveAdvisorMessages(profileId, [firstMsg], newConvId).catch(console.error);
       }
 
       // Also persist to profile blob immediately (no debounce)
       setProfile((prev) => {
-        const next = { ...prev, advisorMessages: [firstMsg], actionItems: updatedItems, lastUpdated: new Date() };
+        const next = { ...prev, advisorMessages: [firstMsg], lastUpdated: new Date() };
         if (profileId) {
           try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
           updateProfile(profileId, next).catch(console.error);
@@ -391,32 +323,6 @@ function App() {
     } finally {
       setAdvisorLoading(false);
     }
-  };
-
-  const handleToggleActionItem = (itemId: string) => {
-    setActionItems((prev) => {
-      const updated = prev.map((item) => {
-        if (item.id !== itemId) return item;
-        const newStatus = item.status === "pending" ? "completed" as const : "pending" as const;
-        return {
-          ...item,
-          status: newStatus,
-          completedAt: newStatus === "completed" ? new Date().toISOString() : undefined,
-        };
-      });
-      // Persist to Supabase
-      const toggled = updated.find((i) => i.id === itemId);
-      if (profileId && toggled) {
-        updateActionItem(profileId, itemId, { status: toggled.status }).catch(console.error);
-      }
-      // Persist to profile blob
-      setProfile((p) => {
-        const next = { ...p, actionItems: updated, lastUpdated: new Date() };
-        if (profileId) debouncedSave(profileId, next);
-        return next;
-      });
-      return updated;
-    });
   };
 
   const handleNewConversation = async () => {
@@ -446,20 +352,12 @@ function App() {
       setAdvisorMessages([firstMsg]);
       latestConvMessagesRef.current = [firstMsg];
 
-      const updatedItems = addNewActionItems(response.actionItems, actionItems);
-      setActionItems(updatedItems);
-
       if (profileId) {
-        await Promise.all([
-          saveAdvisorMessages(profileId, [firstMsg], newConvId).catch(console.error),
-          updatedItems.length > 0
-            ? saveActionItems(profileId, updatedItems).catch(console.error)
-            : Promise.resolve(),
-        ]);
+        await saveAdvisorMessages(profileId, [firstMsg], newConvId).catch(console.error);
       }
 
       setProfile((prev) => {
-        const next = { ...prev, advisorMessages: [firstMsg], actionItems: updatedItems, lastUpdated: new Date() };
+        const next = { ...prev, advisorMessages: [firstMsg], lastUpdated: new Date() };
         if (profileId) {
           try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
           updateProfile(profileId, next).catch(console.error);
@@ -529,7 +427,6 @@ function App() {
     setError(null);
     setProfileId(null);
     setAdvisorMessages([]);
-    setActionItems([]);
     advisorInitRef.current = false;
     history.replaceState(null, "", "/");
   };
@@ -576,8 +473,6 @@ function App() {
           refreshingAnalysis={refreshingAnalysis}
           onAdvisorTabOpened={handleAdvisorTabOpened}
           onNewConversation={handleNewConversation}
-          actionItems={actionItems}
-          onToggleActionItem={handleToggleActionItem}
           profileId={profileId}
           onLoadConversation={handleLoadConversation}
           onBackToCurrent={handleBackToCurrent}

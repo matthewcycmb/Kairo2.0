@@ -226,14 +226,7 @@ interface AdvisorMsg {
   content: string;
 }
 
-interface PendingAction {
-  id: string;
-  action: string;
-  gap: string;
-  createdAt: string;
-}
-
-function buildAdvisorSystemPrompt(profile: AdvisorProfile, pendingActions?: PendingAction[]): string {
+function buildAdvisorSystemPrompt(profile: AdvisorProfile): string {
   const activitiesSummary = profile.activities
     .map((a) => {
       const parts = [`• ${a.name} (${a.category})`];
@@ -274,20 +267,12 @@ ${goalsSection}
 
 6. TALK LIKE A FRIEND. Short sentences. "You" and "your" constantly. No jargon — no "co-curricular", "inter-school", "demonstrated", "measurable", "at scale." If it sounds like a guidance counsellor wrote it, rewrite it. Use **bold** for emphasis. Keep paragraphs to 1-2 sentences. Easy to scan on a phone.
 
-SUGGESTIONS: Generate exactly 3 questions that make the student feel a jolt — slight anxiety, genuine curiosity, or both. The test: would the student screenshot this and send it to a friend saying "bro look at this question"? If not, it's too tame. Go visceral, not analytical. Good: "If a Sauder admissions officer read your profile right now, which activity would make them roll their eyes?" Bad: "Is your food bank volunteering hurting your application or just not helping?" Each must reference a specific activity, gap, or university from your analysis.
-
-ACTION ITEMS: Maximum 1 per response — the creative combination you suggested, not a generic task.
-${pendingActions?.length ? `
-PENDING ACTIONS:
-${pendingActions.map((a, i) => `${i + 1}. "${a.action}" (gap: ${a.gap}, assigned: ${a.createdAt})`).join("\n")}
-Completed action: acknowledge briefly, give next step if under 2 pending. Not done yet: be direct about what they're losing by waiting.
-` : ""}`;
+SUGGESTIONS: Generate exactly 3 questions that make the student feel a jolt — slight anxiety, genuine curiosity, or both. The test: would the student screenshot this and send it to a friend saying "bro look at this question"? If not, it's too tame. Go visceral, not analytical. Good: "If a Sauder admissions officer read your profile right now, which activity would make them roll their eyes?" Bad: "Is your food bank volunteering hurting your application or just not helping?" Each must reference a specific activity, gap, or university from your analysis.`;
 }
 
 function buildAdvisorUserPrompt(
   messages: AdvisorMsg[],
   isFirstMessage: boolean,
-  pendingActions?: PendingAction[]
 ): string {
   if (isFirstMessage) {
     return `First message to the student. Conversational paragraphs only — no bullets, no headers.
@@ -302,8 +287,7 @@ Structure (250 words max):
 Respond with JSON:
 {
   "message": "Your opening. Use \\n\\n between paragraphs. Use **bold** for emphasis. No bullets.",
-  "suggestions": ["Curiosity hook referencing a specific gap/activity/university from your analysis", "Another specific hook", "Third specific hook"],
-  "actionItems": [{"action": "The creative combination you suggested", "gap": "area it strengthens"}]
+  "suggestions": ["Curiosity hook referencing a specific gap/activity/university from your analysis", "Another specific hook", "Third specific hook"]
 }
 
 Return ONLY valid JSON, no extra text`;
@@ -314,22 +298,16 @@ Return ONLY valid JSON, no extra text`;
     .map((m) => `${m.role === "user" ? "Student" : "Advisor"}: ${m.content}`)
     .join("\n\n");
 
-  const actionContext = pendingActions?.length
-    ? `\n\nThe student currently has these pending action items:\n${pendingActions.map((a) => `- "${a.action}" (gap: ${a.gap})`).join("\n")}\n\nIf the student's message relates to completing or not completing an action item, handle it appropriately (celebrate completions, be empathetic about incomplete items and offer to simplify or draft something).`
-    : "";
-
-  return `Conversation so far:\n\n${history}${actionContext}\n\nRespond to the student's latest message.
+  return `Conversation so far:\n\n${history}\n\nRespond to the student's latest message.
 
 80 words max. One key insight with a specific profile reference. End with either a creative combination or an uncomfortable truth. Offer to go deeper only if there's more to unpack — don't force it. Give a detailed breakdown (over 80 words) only if the student explicitly asks.
 
 Respond with JSON:
 {
   "message": "Your response. Use **bold** for emphasis. Use \\n\\n between paragraphs.",
-  "suggestions": ["Personalized curiosity hook referencing their profile", "Another specific hook", "Third hook"],
-  "actionItems": [{"action": "Creative combination if applicable", "gap": "area it strengthens"}]
+  "suggestions": ["Personalized curiosity hook referencing their profile", "Another specific hook", "Third hook"]
 }
 
-actionItems: only include if you gave a specific recommendation. Empty array otherwise.
 Return ONLY valid JSON, no extra text`;
 }
 
@@ -491,9 +469,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (body.messages && (!Array.isArray(body.messages) || body.messages.length > MAX_MESSAGES)) {
         return res.status(400).json({ error: "Too many messages" });
       }
-      if (body.pendingActions && !Array.isArray(body.pendingActions)) {
-        return res.status(400).json({ error: "Invalid pending actions" });
-      }
     } else if (body.type === "app-helper") {
       if (!body.profile || !Array.isArray(body.profile.activities)) {
         return res.status(400).json({ error: "Invalid profile" });
@@ -541,8 +516,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (body.type === "advisor") {
-      const advisorSystem = buildAdvisorSystemPrompt(body.profile, body.pendingActions);
-      const advisorUser = buildAdvisorUserPrompt(body.messages || [], body.isFirstMessage, body.pendingActions);
+      const advisorSystem = buildAdvisorSystemPrompt(body.profile);
+      const advisorUser = buildAdvisorUserPrompt(body.messages || [], body.isFirstMessage);
 
       const advisorMessage = await anthropic.messages.create({
         model: "claude-sonnet-4-5-20250929",
@@ -579,7 +554,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({
           message,
           suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
-          actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : [],
         });
       }
 
