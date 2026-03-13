@@ -320,6 +320,13 @@ function App() {
     } catch (err) {
       console.error("Advisor init error:", err);
       advisorInitRef.current = false; // Allow retry
+      const errorMsg: AdvisorMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: "Something went wrong loading your advisor. Check your connection and try again.",
+        timestamp: new Date().toISOString(),
+      };
+      setAdvisorMessages([errorMsg]);
     } finally {
       setAdvisorLoading(false);
     }
@@ -327,8 +334,8 @@ function App() {
 
   const handleNewConversation = async () => {
     setRefreshingAnalysis(true);
+    const newConvId = crypto.randomUUID();
     try {
-      const newConvId = crypto.randomUUID();
       setConversationId(newConvId);
       setLatestConvId(newConvId);
 
@@ -366,6 +373,14 @@ function App() {
       });
     } catch (err) {
       console.error("New conversation error:", err);
+      const errorMsg: AdvisorMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: "Something went wrong starting a new chat. Check your connection and try again.",
+        timestamp: new Date().toISOString(),
+        conversationId: newConvId,
+      };
+      setAdvisorMessages([errorMsg]);
     } finally {
       setRefreshingAnalysis(false);
     }

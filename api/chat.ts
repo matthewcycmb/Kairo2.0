@@ -473,7 +473,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: "Invalid answers" });
       }
     } else if (body.type === "expand") {
-      if (!body.activity || typeof body.activity.name !== "string") {
+      if (!body.activity || typeof body.activity.name !== "string" || typeof body.activity.description !== "string" || !Array.isArray(body.activity.details)) {
         return res.status(400).json({ error: "Invalid activity" });
       }
     } else if (body.type === "expand-answer") {
@@ -489,6 +489,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       if (body.messages && (!Array.isArray(body.messages) || body.messages.length > MAX_MESSAGES)) {
         return res.status(400).json({ error: "Too many messages" });
+      }
+      if (body.isFirstMessage !== undefined && typeof body.isFirstMessage !== "boolean") {
+        return res.status(400).json({ error: "Invalid isFirstMessage value" });
       }
     } else if (body.type === "app-helper") {
       if (!body.profile || !Array.isArray(body.profile.activities)) {
@@ -515,7 +518,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const textBlock = appHelperMessage.content.find((block) => block.type === "text");
       if (!textBlock || textBlock.type !== "text") {
-        return res.status(500).send("No text response from AI");
+        return res.status(500).json({ error: "No text response from AI" });
       }
 
       const cleaned = textBlock.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
@@ -549,7 +552,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const advisorTextBlock = advisorMessage.content.find((block) => block.type === "text");
       if (!advisorTextBlock || advisorTextBlock.type !== "text") {
-        return res.status(500).send("No text response from AI");
+        return res.status(500).json({ error: "No text response from AI" });
       }
 
       const cleaned = advisorTextBlock.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
@@ -596,15 +599,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).send("Invalid request type");
     }
 
-    // Use Haiku for structured extraction/generation tasks to save costs
-    // Only app-helper generate and advisor need Sonnet for writing quality
-    const isSonnetTask = false; // parse, followup, expand, expand-answer all use Haiku
     const isLightTask = body.type === "expand" || body.type === "expand-answer";
-    const model = isSonnetTask ? "claude-sonnet-4-5-20250929" : "claude-haiku-4-5-20251001";
     const maxTokens = isLightTask ? 1024 : 4096;
 
     const message = await anthropic.messages.create({
-      model,
+      model: "claude-haiku-4-5-20251001",
       max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
@@ -612,7 +611,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const textBlock = message.content.find((block) => block.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      return res.status(500).send("No text response from AI");
+      return res.status(500).json({ error: "No text response from AI" });
     }
 
     const rawText = textBlock.text;
@@ -622,15 +621,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const parsed = JSON.parse(cleaned);
       return res.status(200).json(parsed);
     } catch {
-      return res.status(500).send("AI returned invalid JSON");
+      console.error("AI returned invalid JSON:", rawText.slice(0, 500));
+      return res.status(500).json({ error: "AI returned invalid JSON" });
     }
   } catch (error) {
     console.error("API error:", error);
 
     if (error instanceof Anthropic.RateLimitError) {
-      return res.status(429).send("Too many requests — please try again in a moment");
+      return res.status(429).json({ error: "Too many requests — please try again in a moment" });
+    }
+    if (error instanceof Anthropic.AuthenticationError) {
+      return res.status(500).json({ error: "AI service configuration error" });
+    }
+    if (error instanceof Anthropic.BadRequestError) {
+      return res.status(400).json({ error: "Invalid request to AI service" });
     }
 
-    return res.status(500).send("Internal server error");
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
