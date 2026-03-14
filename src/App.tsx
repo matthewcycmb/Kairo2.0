@@ -71,6 +71,7 @@ function App() {
     loadProfile(initialProfileId)
       .then((loaded) => {
         if (loaded) {
+          if (!Array.isArray(loaded.activities)) loaded.activities = [];
           setProfile(loaded);
           try { localStorage.setItem(`kairo_profile_${initialProfileId}`, JSON.stringify(loaded)); } catch {}
           if (loaded.advisorMessages?.length) {

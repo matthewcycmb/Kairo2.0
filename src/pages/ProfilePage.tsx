@@ -111,7 +111,8 @@ export default function ProfilePage({
 
   // Monthly check-in — show when profile is 30+ days stale
   const checkinKey = profileId ? `kairo-checkin-${profileId}` : null;
-  const daysSinceUpdate = Math.floor((Date.now() - new Date(profile.lastUpdated).getTime()) / 86_400_000);
+  const lastUpdatedTime = profile.lastUpdated ? new Date(profile.lastUpdated).getTime() : Date.now();
+  const daysSinceUpdate = Math.floor((Date.now() - (Number.isNaN(lastUpdatedTime) ? Date.now() : lastUpdatedTime)) / 86_400_000);
   const [showCheckin, setShowCheckin] = useState(() => {
     if (!checkinKey || daysSinceUpdate < 30) return false;
     try {
