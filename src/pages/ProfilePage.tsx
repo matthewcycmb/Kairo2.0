@@ -321,14 +321,14 @@ export default function ProfilePage({
       {/* Header */}
       <div className="relative mb-5">
         <div className="flex flex-wrap items-start justify-between gap-y-2 sm:flex-nowrap sm:items-center">
-          <div className="min-w-0">
-            <p className="mb-1 text-[11px] font-medium tracking-widest text-white/25 uppercase">Kairo</p>
+          <div className="min-w-0 flex items-baseline gap-2.5">
             <h1 className="text-xl font-semibold text-white sm:text-2xl">
-              {activeTab === "profile" && "Your Profile"}
+              {activeTab === "profile" && "Profile"}
               {activeTab === "advisor" && "Advisor"}
-              {activeTab === "apphelper" && "App Writer"}
+              {activeTab === "apphelper" && "Writer"}
               {activeTab === "strategy" && "Strategy"}
             </h1>
+            <span className="text-[10px] font-medium tracking-widest text-white/20 uppercase">Kairo</span>
           </div>
           {/* Desktop: buttons inline with title. Mobile: hidden here, shown below */}
           <div className="hidden shrink-0 items-center gap-2 sm:flex">
@@ -510,20 +510,20 @@ export default function ProfilePage({
         </div>
 
         {/* Mobile-only action buttons row */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 sm:hidden">
+        <div className="mt-2 flex flex-wrap items-center gap-4 sm:hidden">
           {activeTab === "profile" && (
             <>
               {profileId && (
                 <button
                   onClick={() => setShowSavePopover((v) => !v)}
-                  className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+                  className="text-xs font-medium text-white/35 transition-colors hover:text-white/60"
                 >
-                  Save my profile
+                  Save
                 </button>
               )}
               <button
                 onClick={() => setShowResume(true)}
-                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+                className="text-xs font-medium text-white/35 transition-colors hover:text-white/60"
               >
                 Resume
               </button>
@@ -534,7 +534,7 @@ export default function ProfilePage({
               <button
                 onClick={onNewConversation}
                 disabled={refreshingAnalysis}
-                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white disabled:opacity-40"
+                className="text-xs font-medium text-white/35 transition-colors hover:text-white/60 disabled:opacity-40"
               >
                 {refreshingAnalysis ? "Loading..." : "New chat"}
               </button>
@@ -544,14 +544,14 @@ export default function ProfilePage({
                     setShowPrevChats((v) => !v);
                     if (!showPrevChats) onListConversations();
                   }}
-                  className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+                  className="text-xs font-medium text-white/35 transition-colors hover:text-white/60"
                 >
-                  Previous chats
+                  History
                 </button>
                 {showPrevChats && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowPrevChats(false)} />
-                    <div className="absolute left-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
+                    <div className="absolute left-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-white/[0.10] bg-white/[0.06] py-1 shadow-xl backdrop-blur-[40px]">
                       {isViewingPrevious && (
                         <button
                           onClick={() => {
@@ -609,9 +609,9 @@ export default function ProfilePage({
                   setShowPrevSessions((v) => !v);
                   if (!showPrevSessions) refreshAppHelperSessions();
                 }}
-                className="rounded-lg border border-white/[0.15] bg-white/[0.10] px-3 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
+                className="text-xs font-medium text-white/35 transition-colors hover:text-white/60"
               >
-                Previous sessions
+                History
               </button>
               {showPrevSessions && (
                 <>
@@ -669,7 +669,7 @@ export default function ProfilePage({
           <div className="relative ml-auto">
             <button
               onClick={() => setShowMenu((v) => !v)}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/[0.10] hover:text-white/80"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition-colors hover:text-white/50"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                 <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
