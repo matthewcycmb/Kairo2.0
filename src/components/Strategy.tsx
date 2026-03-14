@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { StudentProfile, StrategyGuideResponse, StrategyAOResponse } from "../types/profile";
 import { callApi } from "../lib/apiClient";
+import { track } from "../lib/analytics";
 
 const LOADING_STAGES = [
   "Reading your activities...",
@@ -204,6 +205,8 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
       setPhase("input");
       return;
     }
+
+    track("strategy_analyzed", { program: targetProgram.trim() });
 
     // Cache results for persistence across page refreshes
     if (aoResult && guideResult) {

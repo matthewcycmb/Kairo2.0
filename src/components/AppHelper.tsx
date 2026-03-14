@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { StudentProfile, AppHelperSessionData } from "../types/profile";
 import { callApi } from "../lib/apiClient";
+import { track } from "../lib/analytics";
 
 type AppHelperSession = AppHelperSessionData;
 
@@ -129,6 +130,7 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
       if (response.answer) {
         setAnswer(response.answer);
         setStep("answer");
+        track("app_writer_used");
 
         // Auto-save session
         const session: AppHelperSession = {

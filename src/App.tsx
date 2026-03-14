@@ -10,6 +10,7 @@ import { createProfile, updateProfile, loadProfile, saveAdvisorMessages, loadAdv
 import type { ConversationSummary } from "./types/profile";
 import { callApi } from "./lib/apiClient";
 import { Analytics } from "@vercel/analytics/react";
+import { track } from "./lib/analytics";
 
 const initialProfileId = new URLSearchParams(window.location.search).get("p");
 
@@ -88,6 +89,7 @@ function App() {
   }, []);
 
   const handleBrainDumpSubmit = (text: string) => {
+    track("onboarding_started", { text_length: text.length });
     setRawText(text);
     setCurrentView("chat");
   };
@@ -125,6 +127,7 @@ function App() {
   };
 
   const handleGoalsComplete = (goals: StudentGoals) => {
+    track("onboarding_completed", { grade: goals.grade, has_target: !!goals.targetUniversities });
     setProfile((prev) => {
       const next = { ...prev, goals, lastUpdated: new Date() };
       if (profileId) debouncedSave(profileId, next);
@@ -166,6 +169,7 @@ function App() {
   };
 
   const handleAdvisorMessage = async (userText: string) => {
+    track("advisor_message_sent");
     const userMsg: AdvisorMessage = {
       id: crypto.randomUUID(),
       role: "user",

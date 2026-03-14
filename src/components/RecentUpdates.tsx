@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { StudentProfile } from "../types/profile";
 import { callApi } from "../lib/apiClient";
+import { track } from "../lib/analytics";
 
 interface Update {
   id: string;
@@ -66,6 +67,7 @@ export default function RecentUpdates({ profile, profileId }: RecentUpdatesProps
     setUpdates(next);
     setInput("");
     setSubmitting(true);
+    track("quick_update_added");
 
     try {
       const response = await callApi({
