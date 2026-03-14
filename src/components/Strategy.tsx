@@ -4,30 +4,50 @@ import { callApi } from "../lib/apiClient";
 
 const LOADING_STAGES = [
   "Reading your activities...",
+  "Cross-referencing your profile...",
   "Comparing to other applicants...",
   "Evaluating program fit...",
-  "Writing your review...",
+  "Checking admission standards...",
+  "Writing your verdict...",
+  "Almost done...",
 ];
 
 function StagedLoader({ program }: { program: string }) {
   const [stage, setStage] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const stageInterval = setInterval(() => {
       setStage((s) => (s < LOADING_STAGES.length - 1 ? s + 1 : s));
-    }, 3000);
-    return () => clearInterval(interval);
+    }, 2500);
+    return () => clearInterval(stageInterval);
+  }, []);
+
+  // Smooth progress bar that slows down as it approaches 90%
+  useEffect(() => {
+    const progressInterval = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 90) return p;
+        const remaining = 90 - p;
+        return p + remaining * 0.04;
+      });
+    }, 200);
+    return () => clearInterval(progressInterval);
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-12">
-      <svg className="h-5 w-5 animate-spin text-white/30" viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
+    <div className="flex flex-col items-center justify-center gap-5 py-14">
+      <div className="w-48">
+        <div className="h-[2px] overflow-hidden rounded-full bg-white/[0.06]">
+          <div
+            className="h-full rounded-full bg-white/20 transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
       <div className="text-center">
-        <p className="text-sm text-white/40">{LOADING_STAGES[stage]}</p>
-        <p className="mt-1 text-xs text-white/15">{program}</p>
+        <p className="text-sm text-white/40 animate-[fadeIn_0.3s_ease-out]" key={stage}>{LOADING_STAGES[stage]}</p>
+        <p className="mt-1.5 text-xs text-white/15">{program}</p>
       </div>
     </div>
   );
