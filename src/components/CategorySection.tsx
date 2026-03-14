@@ -8,17 +8,32 @@ interface CategorySectionProps {
   onEditActivity: (id: string, updates: Partial<ParsedActivity>) => void;
 }
 
+const CATEGORY_ICONS: Record<string, string> = {
+  Academics: "📚",
+  Sports: "⚡",
+  "Arts & Music": "🎨",
+  Volunteering: "💛",
+  Clubs: "🏛",
+  "Work & Leadership": "🚀",
+  Certifications: "✦",
+};
+
 export default function CategorySection({
   category,
   activities,
   onEditActivity,
 }: CategorySectionProps) {
+  const icon = CATEGORY_ICONS[category] || "•";
   return (
-    <section className="mb-8">
-      <h2 className="mb-4 border-b border-white/[0.08] pb-2 text-xl font-bold text-white">
-        {getCategoryDisplayName(category)}
-      </h2>
-      <div className="space-y-4">
+    <section className="mb-6">
+      <div className="mb-3 flex items-center gap-2.5 border-b border-white/[0.06] pb-2.5">
+        <span className="text-base">{icon}</span>
+        <h2 className="text-base font-semibold text-white/80">
+          {getCategoryDisplayName(category)}
+        </h2>
+        <span className="text-xs text-white/25">{activities.length}</span>
+      </div>
+      <div className="space-y-3">
         {activities.map((activity) => (
           <ActivityCard
             key={activity.id}

@@ -1,8 +1,8 @@
-import type { ParseRequest, FollowUpRequest, ParseResponse, FollowUpResponse, ExpandRequest, ExpandResponse, ExpandAnswerRequest, ExpandAnswerResponse, AdvisorRequest, AdvisorResponse, AppHelperRequest, AppHelperResponse } from "../types/profile";
+import type { ParseRequest, FollowUpRequest, ParseResponse, FollowUpResponse, ExpandRequest, ExpandResponse, ExpandAnswerRequest, ExpandAnswerResponse, AdvisorRequest, AdvisorResponse, AppHelperRequest, AppHelperResponse, StrategyGuideRequest, StrategyGuideResponse, StrategyAORequest, StrategyAOResponse } from "../types/profile";
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
-const FETCH_TIMEOUT_MS = 45_000; // 45 seconds
+const FETCH_TIMEOUT_MS = 60_000; // 60 seconds
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -14,8 +14,8 @@ function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number):
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
-type ApiRequest = ParseRequest | FollowUpRequest | ExpandRequest | ExpandAnswerRequest | AdvisorRequest | AppHelperRequest;
-type ApiResponse = ParseResponse | FollowUpResponse | ExpandResponse | ExpandAnswerResponse | AdvisorResponse | AppHelperResponse;
+type ApiRequest = ParseRequest | FollowUpRequest | ExpandRequest | ExpandAnswerRequest | AdvisorRequest | AppHelperRequest | StrategyGuideRequest | StrategyAORequest;
+type ApiResponse = ParseResponse | FollowUpResponse | ExpandResponse | ExpandAnswerResponse | AdvisorResponse | AppHelperResponse | StrategyGuideResponse | StrategyAOResponse;
 
 export async function callApi(request: ParseRequest): Promise<ParseResponse>;
 export async function callApi(request: FollowUpRequest): Promise<FollowUpResponse>;
@@ -23,6 +23,8 @@ export async function callApi(request: ExpandRequest): Promise<ExpandResponse>;
 export async function callApi(request: ExpandAnswerRequest): Promise<ExpandAnswerResponse>;
 export async function callApi(request: AdvisorRequest): Promise<AdvisorResponse>;
 export async function callApi(request: AppHelperRequest): Promise<AppHelperResponse>;
+export async function callApi(request: StrategyGuideRequest): Promise<StrategyGuideResponse>;
+export async function callApi(request: StrategyAORequest): Promise<StrategyAOResponse>;
 export async function callApi(request: ApiRequest): Promise<ApiResponse> {
   let lastError: Error | null = null;
 

@@ -185,23 +185,11 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Intro header */}
-      <div className="rounded-2xl border border-white/[0.15] bg-white/[0.07] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
-        <div className="mb-3 pb-3 border-b border-white/[0.08] text-center">
-          <h2 className="text-base font-semibold text-white/90">Kairo Application Writer</h2>
-          <p className="text-sm text-white/50">Paste a question and get a personalized answer based on your profile</p>
-        </div>
-
-        {/* Step 1: Question input */}
-        <label className="mb-1 block text-sm font-medium text-white/70">
-          Application Question
-        </label>
-        <p className="mb-3 text-xs text-white/50">
-          e.g. "Describe your most meaningful extracurricular activity and what you learned from it."
-        </p>
+      <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] p-5 sm:p-6">
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Paste the application question here"
+          placeholder="Paste your application question here..."
           rows={3}
           disabled={step !== "question"}
           className="w-full resize-none rounded-xl border border-white/[0.12] bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10 disabled:opacity-60 sm:p-4 sm:text-base"

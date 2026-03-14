@@ -110,6 +110,36 @@ function AiMessage({
   );
 }
 
+interface AoReviewSummary {
+  firstImpression: string;
+  strengths: string;
+  concerns: string;
+  verdict: string;
+  nextSteps?: string;
+  targetProgram: string;
+}
+
+function getVerdictLabel(verdict: string): { label: string; color: string } {
+  const lower = verdict.toLowerCase();
+  if (lower.includes("admit") && !lower.includes("waitlist") && !lower.includes("reject") && !lower.includes("borderline") && !lower.includes("unlikely")) {
+    return { label: "Likely Admit", color: "text-green-400" };
+  }
+  if (lower.includes("reject") || lower.includes("unlikely")) {
+    return { label: "Tough Odds", color: "text-red-400" };
+  }
+  return { label: "Borderline", color: "text-amber-400" };
+}
+
+function loadAoReview(): AoReviewSummary | null {
+  try {
+    const raw = localStorage.getItem("kairo-ao-review");
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data?.verdict && data?.targetProgram) return data;
+  } catch {}
+  return null;
+}
+
 interface AdvisorChatProps {
   advisorMessages: AdvisorMessage[];
   onNewMessage: (text: string) => void;
@@ -220,19 +250,17 @@ export default function AdvisorChat({
   // Get suggestions from the last assistant message — only show after typing finishes
   const lastAssistantMsg = [...advisorMessages].reverse().find((m) => m.role === "assistant");
   const isLastMsgTyping = typingId === lastAssistantMsg?.id && !typingDone;
-  const suggestions = !isLoading && !isLastMsgTyping && lastAssistantMsg?.suggestions?.length
-    ? lastAssistantMsg.suggestions
+  const aoForSuggestions = advisorMessages.length === 0 ? loadAoReview() : null;
+  const defaultSuggestions = aoForSuggestions
+    ? ["What should I focus on first?", "How do I fix my biggest weakness?", "Is my profile strong enough?"]
+    : [];
+  const suggestions = !isLoading && !isLastMsgTyping
+    ? (lastAssistantMsg?.suggestions?.length ? lastAssistantMsg.suggestions : defaultSuggestions)
     : [];
 
   return (
-    <div className="flex h-full flex-col px-1 pt-4 sm:px-2">
-      <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/[0.15] bg-white/[0.07] backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)]">
-        {/* Header */}
-        <div className="px-4 pt-5 pb-3 sm:px-6 text-center border-b border-white/[0.10]">
-          <h2 className="text-base font-semibold text-white/90">Kairo Advisor</h2>
-          <p className="mt-1 text-sm text-white/50">Honest advice based on your profile</p>
-        </div>
-
+    <div className="flex h-full flex-col">
+      <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/[0.08] bg-white/[0.03]">
         {/* Messages area — independently scrollable */}
         <div className="flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
           {isRefreshing && (
@@ -243,13 +271,34 @@ export default function AdvisorChat({
             </div>
           )}
 
-          {!isRefreshing && !isLoading && advisorMessages.length === 0 && (
-            <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
-              <p className="text-center text-lg font-medium text-white/50">
-                What's on your mind?
-              </p>
-            </div>
-          )}
+          {!isRefreshing && !isLoading && advisorMessages.length === 0 && (() => {
+            const ao = loadAoReview();
+            if (ao) {
+              const v = getVerdictLabel(ao.verdict);
+              return (
+                <div className="py-6">
+                  <div className="rounded-xl border border-white/[0.10] bg-white/[0.04] p-4">
+                    <p className="text-xs font-medium text-white/30">Your strategy review for</p>
+                    <p className="mt-0.5 text-base font-semibold text-white/80">{ao.targetProgram}</p>
+                    <p className={`mt-2 text-lg font-bold ${v.color}`}>{v.label}</p>
+                    <p className="mt-2 text-[15px] leading-[1.6] text-white/60">
+                      {ao.verdict.length > 200 ? ao.verdict.slice(0, 200).trimEnd() + "..." : ao.verdict}
+                    </p>
+                  </div>
+                  <p className="mt-4 text-center text-base text-white/40">
+                    Ask me anything about your review
+                  </p>
+                </div>
+              );
+            }
+            return (
+              <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
+                <p className="text-center text-lg font-medium text-white/50">
+                  What's on your mind?
+                </p>
+              </div>
+            );
+          })()}
 
           {!isRefreshing && advisorMessages.map((msg) => (
             <ChatBubble key={msg.id} type={msg.role === "user" ? "user" : "ai"}>

@@ -98,7 +98,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
 
   return (
     <div
-      className={`rounded-xl border border-white/[0.15] bg-white/[0.07] p-4 transition-all backdrop-blur-[40px] sm:p-6 cursor-pointer sm:cursor-default`}
+      className={`rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5 transition-all sm:p-6 cursor-pointer sm:cursor-default`}
       onClick={(e) => {
         // Only toggle on mobile, skip if clicking a button/input/textarea
         if (editing) return;

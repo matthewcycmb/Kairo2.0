@@ -8,6 +8,7 @@ import CategorySection from "../components/CategorySection";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AdvisorChat from "../components/AdvisorChat";
 import AppHelper, { type AppHelperSession } from "../components/AppHelper";
+import Strategy from "../components/Strategy";
 import ResumeModal from "../components/ResumeModal";
 
 function formatRelativeTime(timestamp: string): string {
@@ -46,6 +47,7 @@ interface ProfilePageProps {
   conversations: ConversationSummary[];
   onListConversations: () => void;
   isViewingPrevious: boolean;
+  onDiscussStrategy?: (strategyContext: string) => Promise<void>;
   onAppHelperSessionsChanged?: (sessions: AppHelperSession[]) => void;
 }
 
@@ -71,9 +73,10 @@ export default function ProfilePage({
   conversations,
   onListConversations,
   isViewingPrevious,
+  onDiscussStrategy,
   onAppHelperSessionsChanged,
 }: ProfilePageProps) {
-  const [activeTab, setActiveTab] = useState<"profile" | "advisor" | "apphelper">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "advisor" | "apphelper" | "strategy">("profile");
   const [forgotStep, setForgotStep] = useState<"idle" | "input" | "followup">("idle");
   const [forgotText, setForgotText] = useState("");
   const [newActivities, setNewActivities] = useState<ParsedActivity[]>([]);
@@ -85,6 +88,40 @@ export default function ProfilePage({
   const [identifierSaved, setIdentifierSaved] = useState(false);
   const [identifierSaving, setIdentifierSaving] = useState(false);
   const [showResume, setShowResume] = useState(false);
+
+  // Welcome card — show once after onboarding
+  const welcomeKey = profileId ? `kairo-welcomed-${profileId}` : null;
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (!welcomeKey || !profile.goals) return false;
+    try { return !localStorage.getItem(welcomeKey); } catch { return false; }
+  });
+
+  const [autoSubmitStrategy, setAutoSubmitStrategy] = useState(false);
+
+  const dismissWelcome = (tab?: "advisor" | "apphelper" | "strategy") => {
+    setShowWelcome(false);
+    if (welcomeKey) try { localStorage.setItem(welcomeKey, "1"); } catch {}
+    if (tab === "strategy") setAutoSubmitStrategy(true);
+    if (tab) handleTabClick(tab);
+  };
+
+  // Monthly check-in — show when profile is 30+ days stale
+  const checkinKey = profileId ? `kairo-checkin-${profileId}` : null;
+  const daysSinceUpdate = Math.floor((Date.now() - new Date(profile.lastUpdated).getTime()) / 86_400_000);
+  const [showCheckin, setShowCheckin] = useState(() => {
+    if (!checkinKey || daysSinceUpdate < 30) return false;
+    try {
+      const dismissed = localStorage.getItem(checkinKey);
+      if (!dismissed) return true;
+      // Show again if dismissed more than 30 days ago
+      return Date.now() - Number(dismissed) > 30 * 86_400_000;
+    } catch { return false; }
+  });
+
+  const dismissCheckin = () => {
+    setShowCheckin(false);
+    if (checkinKey) try { localStorage.setItem(checkinKey, String(Date.now())); } catch {}
+  };
   const [showMenu, setShowMenu] = useState(false);
   const [showPrevChats, setShowPrevChats] = useState(false);
   const [showPrevSessions, setShowPrevSessions] = useState(false);
@@ -267,25 +304,31 @@ export default function ProfilePage({
     }
   };
 
-  const handleTabClick = (tab: "profile" | "advisor" | "apphelper") => {
+  const handleTabClick = (tab: "profile" | "advisor" | "apphelper" | "strategy") => {
     setActiveTab(tab);
     if (tab === "advisor") onAdvisorTabOpened();
   };
 
+  const handleDiscussWithAdvisor = async (strategyContext: string) => {
+    setActiveTab("advisor");
+    if (onDiscussStrategy) {
+      await onDiscussStrategy(strategyContext);
+    }
+  };
+
   return (
-    <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-8">
+    <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-6 sm:py-8">
       {/* Header */}
-      <div className="relative mb-6">
+      <div className="relative mb-5">
         <div className="flex flex-wrap items-start justify-between gap-y-2 sm:flex-nowrap sm:items-center">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-white">Your Profile</h1>
-            <p className="text-sm text-white/40">
-              {activeTab === "profile"
-                ? "Click text to edit, or expand activities for more depth"
-                : activeTab === "advisor"
-                  ? "Get personalized advice based on your profile"
-                  : "Write tailored application answers from your profile"}
-            </p>
+            <p className="mb-1 text-[11px] font-medium tracking-widest text-white/25 uppercase">Kairo</p>
+            <h1 className="text-xl font-semibold text-white sm:text-2xl">
+              {activeTab === "profile" && "Your Profile"}
+              {activeTab === "advisor" && "Advisor"}
+              {activeTab === "apphelper" && "App Writer"}
+              {activeTab === "strategy" && "Strategy"}
+            </h1>
           </div>
           {/* Desktop: buttons inline with title. Mobile: hidden here, shown below */}
           <div className="hidden shrink-0 items-center gap-2 sm:flex">
@@ -650,39 +693,73 @@ export default function ProfilePage({
       </div>
 
       {/* Tab bar */}
-      <div className="mb-6 flex gap-1 rounded-xl border border-white/[0.15] bg-white/[0.08] p-1 backdrop-blur-[40px]">
-        <button
-          onClick={() => handleTabClick("profile")}
-          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-            activeTab === "profile"
-              ? "bg-white/[0.15] text-white"
-              : "text-white/50 hover:text-white/70"
-          }`}
-        >
-          Profile
-        </button>
-        <button
-          onClick={() => handleTabClick("advisor")}
-          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-            activeTab === "advisor"
-              ? "bg-white/[0.15] text-white"
-              : "text-white/50 hover:text-white/70"
-          }`}
-        >
-          Advisor
-        </button>
-        <button
-          onClick={() => handleTabClick("apphelper")}
-          className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
-            activeTab === "apphelper"
-              ? "bg-white/[0.15] text-white"
-              : "text-white/50 hover:text-white/70"
-          }`}
-        >
-          <span className="sm:hidden">App Writer</span>
-          <span className="hidden sm:inline">Application Writer</span>
-        </button>
+      <div className="mb-6 flex gap-0.5 rounded-2xl border border-white/[0.10] bg-white/[0.05] p-1.5 sm:gap-1">
+        {(profile.goals?.grade === 12
+          ? (["profile", "apphelper", "advisor", "strategy"] as const)
+          : (["profile", "advisor", "apphelper", "strategy"] as const)
+        ).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => handleTabClick(tab)}
+            className={`flex-1 whitespace-nowrap rounded-xl px-2 py-2.5 text-xs font-medium transition-all sm:px-4 sm:text-[13px] ${
+              activeTab === tab
+                ? "bg-white/[0.12] text-white"
+                : "text-white/35 hover:text-white/55"
+            }`}
+          >
+            {tab === "profile" && "Profile"}
+            {tab === "advisor" && "Advisor"}
+            {tab === "apphelper" && (
+              <>
+                <span className="sm:hidden">Writer</span>
+                <span className="hidden sm:inline">App Writer</span>
+              </>
+            )}
+            {tab === "strategy" && "Strategy"}
+          </button>
+        ))}
       </div>
+
+      {/* Welcome card — shown once after onboarding */}
+      {showWelcome && activeTab === "profile" && profile.goals && (
+        <div className="mb-8 py-2">
+          <p className="mb-5 text-center text-[15px] text-white/40">
+            Check that everything looks right, then
+          </p>
+          <button
+            onClick={() => dismissWelcome("strategy")}
+            className="w-full rounded-2xl border border-white/[0.12] bg-white/[0.08] py-4 text-[15px] font-medium text-white/90 transition-colors hover:bg-white/[0.14]"
+          >
+            See what an admissions officer thinks →
+          </button>
+          <button
+            onClick={() => dismissWelcome()}
+            className="mt-3 w-full py-2 text-xs text-white/20 transition-colors hover:text-white/40"
+          >
+            skip
+          </button>
+        </div>
+      )}
+
+      {/* Monthly check-in */}
+      {showCheckin && activeTab === "profile" && (
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3">
+          <p className="text-sm text-white/40">Last updated {daysSinceUpdate} days ago</p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { dismissCheckin(); setForgotStep("input"); }}
+              className="text-sm font-medium text-blue-400 transition-colors hover:text-blue-300"
+            >
+              Update
+            </button>
+            <button onClick={dismissCheckin} className="text-white/20 hover:text-white/40">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Profile tab content */}
       {activeTab === "profile" && (
@@ -720,13 +797,13 @@ export default function ProfilePage({
             />
           )}
 
-          <div className="mt-6">
+          <div className="mt-8">
             {forgotStep === "idle" && (
               <button
                 onClick={() => setForgotStep("input")}
-                className="w-full rounded-xl border border-white/[0.10] bg-white/[0.04] py-5 text-base font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70"
+                className="w-full rounded-2xl border border-dashed border-white/[0.08] py-4 text-sm text-white/25 transition-colors hover:border-white/[0.15] hover:text-white/40"
               >
-                + Add new activity
+                + Add activity
               </button>
             )}
 
@@ -835,6 +912,11 @@ export default function ProfilePage({
       {/* App Helper tab content — kept mounted to preserve state */}
       <div className={activeTab === "apphelper" ? "flex-1" : "hidden"}>
         <AppHelper profile={profile} profileId={profileId} loadedSession={loadedSession} onSessionLoaded={() => setLoadedSession(null)} onSessionsChanged={onAppHelperSessionsChanged} />
+      </div>
+
+      {/* Strategy tab content — kept mounted to preserve state */}
+      <div className={activeTab === "strategy" ? "flex-1" : "hidden"}>
+        <Strategy profile={profile} onDiscussWithAdvisor={handleDiscussWithAdvisor} autoSubmit={autoSubmitStrategy} />
       </div>
 
       {showSavePopover && (

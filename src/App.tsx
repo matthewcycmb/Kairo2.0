@@ -279,44 +279,12 @@ function App() {
         return;
       }
 
-      // Step 3: No messages at all → generate fresh analysis (show spinner)
+      // Step 3: No messages at all → show empty chat (AO summary card shows if available)
       const newConvId = crypto.randomUUID();
       setConversationId(newConvId);
       setLatestConvId(newConvId);
-
-      setAdvisorLoading(true);
-      const response = await callApi({
-        type: "advisor",
-        profile,
-        messages: [],
-        isFirstMessage: true,
-      });
-
-      const firstMsg: AdvisorMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: response.message,
-        timestamp: new Date().toISOString(),
-        suggestions: response.suggestions,
-        conversationId: newConvId,
-      };
-
-      setAdvisorMessages([firstMsg]);
-
-      // Persist to Supabase
-      if (profileId) {
-        await saveAdvisorMessages(profileId, [firstMsg], newConvId).catch(console.error);
-      }
-
-      // Also persist to profile blob immediately (no debounce)
-      setProfile((prev) => {
-        const next = { ...prev, advisorMessages: [firstMsg], lastUpdated: new Date() };
-        if (profileId) {
-          try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
-          updateProfile(profileId, next).catch(console.error);
-        }
-        return next;
-      });
+      setAdvisorMessages([]);
+      latestConvMessagesRef.current = [];
     } catch (err) {
       console.error("Advisor init error:", err);
       advisorInitRef.current = false; // Allow retry
@@ -377,6 +345,65 @@ function App() {
         id: crypto.randomUUID(),
         role: "assistant",
         content: "Something went wrong starting a new chat. Check your connection and try again.",
+        timestamp: new Date().toISOString(),
+        conversationId: newConvId,
+      };
+      setAdvisorMessages([errorMsg]);
+    } finally {
+      setRefreshingAnalysis(false);
+    }
+  };
+
+  const handleDiscussStrategy = async (strategyContext: string): Promise<void> => {
+    setRefreshingAnalysis(true);
+    const newConvId = crypto.randomUUID();
+    try {
+      setConversationId(newConvId);
+      setLatestConvId(newConvId);
+
+      const response = await callApi({
+        type: "advisor",
+        profile,
+        messages: [],
+        isFirstMessage: true,
+        strategyContext,
+      });
+
+      const messageText = typeof response.message === "string"
+        ? response.message
+        : (response.message as Record<string, unknown>)?.message as string ?? JSON.stringify(response.message);
+
+      const firstMsg: AdvisorMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: messageText,
+        timestamp: new Date().toISOString(),
+        suggestions: response.suggestions,
+        conversationId: newConvId,
+      };
+
+      setAdvisorMessages([firstMsg]);
+      latestConvMessagesRef.current = [firstMsg];
+      advisorInitRef.current = true;
+
+      if (profileId) {
+        await saveAdvisorMessages(profileId, [firstMsg], newConvId).catch(console.error);
+      }
+
+      setProfile((prev) => {
+        const next = { ...prev, advisorMessages: [firstMsg], lastUpdated: new Date() };
+        if (profileId) {
+          try { localStorage.setItem(`kairo_profile_${profileId}`, JSON.stringify(next)); } catch {}
+          updateProfile(profileId, next).catch(console.error);
+        }
+        return next;
+      });
+    } catch (err) {
+      console.error("Discuss strategy error:", err);
+      const errorMsg: AdvisorMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: "Something went wrong. Check your connection and try again.",
         timestamp: new Date().toISOString(),
         conversationId: newConvId,
       };
@@ -495,6 +522,7 @@ function App() {
           conversations={conversations}
           onListConversations={handleListConversations}
           isViewingPrevious={conversationId !== latestConvId}
+          onDiscussStrategy={handleDiscussStrategy}
           onAppHelperSessionsChanged={(sessions) => {
             setProfile((prev) => {
               const next = { ...prev, appHelperSessions: sessions, lastUpdated: new Date() };

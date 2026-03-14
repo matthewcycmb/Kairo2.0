@@ -124,6 +124,7 @@ export interface AdvisorRequest {
   messages: AdvisorMessage[];
   isFirstMessage: boolean;
   pendingActions?: ActionItem[];
+  strategyContext?: string;
 }
 
 export interface AdvisorResponse {
@@ -144,3 +145,33 @@ export interface AppHelperResponse {
   questions?: string[];
   answer?: string;
 }
+
+export interface StrategyGuideRequest {
+  type: "strategy-guide";
+  profile: StudentProfile;
+  targetProgram: string;
+}
+
+export interface StrategyAORequest {
+  type: "strategy-ao";
+  profile: StudentProfile;
+  targetProgram: string;
+}
+
+export interface StrategyGuideResponse {
+  whatTheyLookFor: string;
+  activitiesToEmphasize: string;
+  activitiesToDownplay: string;
+  narrativeStrategy: string;
+  essayApproach: string;
+}
+
+export interface StrategyAOResponse {
+  firstImpression: string;
+  strengths: string;
+  concerns: string;
+  comparison: string;
+  verdict: string;
+  nextSteps: string;
+}
+

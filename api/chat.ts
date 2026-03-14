@@ -4,7 +4,7 @@ config({ path: ".env.local" });
 import Anthropic from "@anthropic-ai/sdk";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -286,7 +286,26 @@ GOOD suggestions (student's inner voice): "Wait, does my channel already count a
 function buildAdvisorUserPrompt(
   messages: AdvisorMsg[],
   isFirstMessage: boolean,
+  strategyContext?: string,
 ): string {
+  if (isFirstMessage && strategyContext) {
+    return `The student just read their Strategy Analysis. Here's what it said:
+
+${strategyContext}
+
+They clicked "Discuss with Advisor" because they want to talk about this. Your job: skip any redundant analysis they've already seen. Instead, pick the single most important finding from the review and go deep on it — what it means for them specifically, what they should do about it THIS WEEK, and one creative combination that addresses their biggest gap.
+
+Be direct, conversational, 200 words max. Reference their specific activities. End with a question that makes them think.
+
+Respond with JSON:
+{
+  "message": "Your response. Use \\n\\n between paragraphs. Use **bold** for emphasis. No bullets.",
+  "suggestions": ["A question the student is already half-thinking — their inner voice, not yours. Short, specific.", "Another thought they're probably having", "A doubt or realization triggered by the review"]
+}
+
+Return ONLY valid JSON, no extra text`;
+  }
+
   if (isFirstMessage) {
     return `First message to the student. Conversational paragraphs only — no bullets, no headers.
 
@@ -405,6 +424,61 @@ RULES:
 Respond with a JSON object: { "answer": "the full answer text" }`;
 }
 
+function buildStrategyGuidePrompt(profile: AdvisorProfile, targetProgram: string): string {
+  const activitiesSummary = buildAppHelperActivitiesSummary(profile);
+  const goalsSection = profile.goals
+    ? `Grade: ${profile.goals.grade}\nTarget Universities: ${profile.goals.targetUniversities || "Not specified"}\nLocation: ${profile.goals.location || "Not specified"}`
+    : "No specific goals set yet.";
+
+  return `Canadian university admissions strategist. Student applying to "${targetProgram}".
+
+PROFILE:
+${activitiesSummary}
+
+GOALS:
+${goalsSection}
+
+Create a strategy guide. Name the student's specific activities — no generic advice.
+
+Respond with JSON. Keep each field to 2-4 sentences max:
+{
+  "whatTheyLookFor": "What ${targetProgram} values. 2-3 sentences.",
+  "activitiesToEmphasize": "Which activities to lead with and how to frame them. Name each.",
+  "activitiesToDownplay": "Which to drop or minimize and why.",
+  "narrativeStrategy": "The one thread connecting their activities for this program.",
+  "essayApproach": "What to write about and what angle to take."
+}
+
+Name actual activities. Be direct, no filler.`;
+}
+
+function buildStrategyAOPrompt(profile: AdvisorProfile, targetProgram: string): string {
+  const activitiesSummary = buildAppHelperActivitiesSummary(profile);
+  const goalsSection = profile.goals
+    ? `Grade: ${profile.goals.grade}\nTarget Universities: ${profile.goals.targetUniversities || "Not specified"}\nLocation: ${profile.goals.location || "Not specified"}`
+    : "No specific goals set yet.";
+
+  return `You are an admissions officer reviewing an application for "${targetProgram}". Write private internal notes in first person. Be brutally honest.
+
+PROFILE:
+${activitiesSummary}
+
+GOALS:
+${goalsSection}
+
+Respond with JSON. Keep each field to 3-5 sentences:
+{
+  "firstImpression": "Gut reaction. What stands out, what's missing.",
+  "strengths": "What impresses you. Name specific activities.",
+  "concerns": "Red flags and weak spots. Name specifics.",
+  "comparison": "How they stack up vs typical ${targetProgram} applicants.",
+  "verdict": "Admit/waitlist/reject — elaborate on why, what almost gets them there, what's holding them back. Be specific about what would tip the decision.",
+  "nextSteps": "3 concrete actions they should take to strengthen their application for ${targetProgram}. Each should reference their existing activities and be doable within a few months. Be specific — not generic advice."
+}
+
+First person as AO. Name activities. Be direct, no filler.`;
+}
+
 function buildExpandAnswerPrompt(
   activity: unknown,
   answers: { question: string; answer: string }[]
@@ -500,8 +574,77 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body.question !== "string" || body.question.trim().length < 5 || body.question.length > 2000) {
         return res.status(400).json({ error: "Question must be 5-2,000 characters" });
       }
+    } else if (body.type === "strategy-guide" || body.type === "strategy-ao") {
+      if (!body.profile || !Array.isArray(body.profile.activities) || body.profile.activities.length === 0) {
+        return res.status(400).json({ error: "Invalid profile — need at least one activity" });
+      }
+      if (body.profile.activities.length > MAX_ACTIVITIES) {
+        return res.status(400).json({ error: "Too many activities" });
+      }
+      if (typeof body.targetProgram !== "string" || body.targetProgram.trim().length < 3 || body.targetProgram.length > 200) {
+        return res.status(400).json({ error: "Target program must be 3-200 characters" });
+      }
     } else {
       return res.status(400).json({ error: "Invalid request type" });
+    }
+
+    if (body.type === "strategy-guide" || body.type === "strategy-ao") {
+      const targetProgram = body.targetProgram.trim();
+      let prompt: string;
+      let model: string;
+      let maxTokens: number;
+
+      if (body.type === "strategy-guide") {
+        prompt = buildStrategyGuidePrompt(body.profile, targetProgram);
+        model = "claude-haiku-4-5-20251001";
+        maxTokens = 1024;
+      } else {
+        prompt = buildStrategyAOPrompt(body.profile, targetProgram);
+        model = "claude-haiku-4-5-20251001";
+        maxTokens = 1024;
+      }
+
+      const strategyMessage = await anthropic.messages.create({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const textBlock = strategyMessage.content.find((block) => block.type === "text");
+      if (!textBlock || textBlock.type !== "text") {
+        return res.status(500).json({ error: "No text response from AI" });
+      }
+
+      const raw = textBlock.text;
+
+      // Extract JSON object from response — Haiku sometimes adds text around it
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error("Strategy: no JSON object found in response:", raw.slice(0, 500));
+        return res.status(500).json({ error: "AI returned invalid JSON" });
+      }
+
+      let jsonStr = jsonMatch[0];
+
+      let parsed: Record<string, unknown> | null = null;
+      try { parsed = JSON.parse(jsonStr); } catch {}
+
+      // Fix actual newlines inside JSON strings
+      if (!parsed) {
+        try {
+          const fixed = jsonStr.replace(/"((?:[^"\\]|\\.)*)"/gs, (match) =>
+            match.replace(/\r?\n/g, "\\n")
+          );
+          parsed = JSON.parse(fixed);
+        } catch {}
+      }
+
+      if (parsed) {
+        return res.status(200).json(parsed);
+      }
+
+      console.error("Strategy: failed to parse JSON:", jsonStr.slice(0, 500));
+      return res.status(500).json({ error: "AI returned invalid JSON" });
     }
 
     if (body.type === "app-helper") {
@@ -541,7 +684,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (body.type === "advisor") {
       const advisorSystem = buildAdvisorSystemPrompt(body.profile);
-      const advisorUser = buildAdvisorUserPrompt(body.messages || [], body.isFirstMessage);
+      const advisorUser = buildAdvisorUserPrompt(body.messages || [], body.isFirstMessage, body.strategyContext);
 
       const advisorMessage = await anthropic.messages.create({
         model: "claude-sonnet-4-5-20250929",
