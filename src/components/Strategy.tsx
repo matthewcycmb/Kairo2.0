@@ -2,6 +2,37 @@ import { useState, useEffect, useRef } from "react";
 import type { StudentProfile, StrategyGuideResponse, StrategyAOResponse } from "../types/profile";
 import { callApi } from "../lib/apiClient";
 
+const LOADING_STAGES = [
+  "Reading your activities...",
+  "Comparing to other applicants...",
+  "Evaluating program fit...",
+  "Writing your review...",
+];
+
+function StagedLoader({ program }: { program: string }) {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStage((s) => (s < LOADING_STAGES.length - 1 ? s + 1 : s));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 py-12">
+      <svg className="h-5 w-5 animate-spin text-white/30" viewBox="0 0 24 24" fill="none">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+      <div className="text-center">
+        <p className="text-sm text-white/40">{LOADING_STAGES[stage]}</p>
+        <p className="mt-1 text-xs text-white/15">{program}</p>
+      </div>
+    </div>
+  );
+}
+
 interface StrategyProps {
   profile: StudentProfile;
   onDiscussWithAdvisor?: (strategyContext: string) => void;
@@ -146,14 +177,8 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
     setError(null);
   };
 
-  const loadingSpinner = (label: string) => (
-    <div className="flex flex-col items-center justify-center gap-2 py-8">
-      <svg className="h-5 w-5 animate-spin text-white/40" viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
-      <span className="text-sm text-white/30">{label}</span>
-    </div>
+  const loadingSpinner = (_label: string) => (
+    <StagedLoader program={targetProgram} />
   );
 
   const verdictStyle = aoData ? getVerdictStyle(aoData.verdict) : null;
