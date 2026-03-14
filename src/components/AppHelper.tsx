@@ -185,14 +185,14 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Intro header */}
-      <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] p-5 sm:p-6">
+      <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] px-5 py-4 sm:px-6 sm:py-5">
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="Paste your application question here..."
           rows={3}
           disabled={step !== "question"}
-          className="w-full resize-none rounded-xl border border-white/[0.12] bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10 disabled:opacity-60 sm:p-4 sm:text-base"
+          className="w-full resize-none bg-transparent text-[15px] text-white placeholder:text-white/30 focus:outline-none disabled:opacity-60 sm:text-base"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && step === "question") {
               e.preventDefault();
@@ -252,14 +252,14 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
 
       {/* Step 2: Clarifying questions */}
       {step === "clarify" && !isLoading && (
-        <div className="rounded-2xl border border-white/[0.15] bg-white/[0.06] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
-          <p className="mb-4 text-sm font-medium text-white/70">
-            A few quick questions so your answer sounds like you
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5 sm:p-6">
+          <p className="mb-5 text-sm text-white/40">
+            Quick questions so your answer sounds like you
           </p>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {clarifyQuestions.map((q, i) => (
               <div key={i}>
-                <label className="mb-1.5 block text-sm text-white/60">{q}</label>
+                <label className="mb-2 block text-[15px] leading-snug text-white/60">{q}</label>
                 <textarea
                   value={clarifyAnswers[i] || ""}
                   onChange={(e) => {
@@ -270,7 +270,7 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
                   }}
                   placeholder="Your answer..."
                   rows={1}
-                  className="w-full resize-none overflow-hidden rounded-lg border border-white/[0.12] bg-white/[0.06] px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
+                  className="w-full resize-none overflow-hidden border-b border-white/[0.10] bg-transparent px-0 py-2 text-sm text-white placeholder:text-white/25 focus:border-white/25 focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey && allClarifyAnswered) {
                       e.preventDefault();
@@ -295,7 +295,7 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
 
       {/* Step 3: Answer display */}
       {step === "answer" && answer && !isLoading && (
-        <div className="rounded-2xl border border-white/[0.15] bg-white/[0.06] p-4 backdrop-blur-2xl backdrop-saturate-[180%] shadow-[0_2px_20px_rgba(0,0,0,0.08)] sm:p-6">
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5 sm:p-6">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-medium text-white/70">Your Answer</span>
             <div className="flex gap-2">
@@ -331,16 +331,9 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty state — minimal, placeholder already explains */}
       {step === "question" && !isLoading && !error && (
-        <div className="flex flex-1 items-center justify-center py-12">
-          <div className="text-center">
-            <p className="text-base text-white/40">Paste an application question above</p>
-            <p className="mt-1 text-sm text-white/25">
-              Kairo will ask a few questions, then write a personalized answer
-            </p>
-          </div>
-        </div>
+        <div className="flex flex-1" />
       )}
     </div>
   );

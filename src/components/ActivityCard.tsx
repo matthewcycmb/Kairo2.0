@@ -120,12 +120,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
               className="w-full border-b-2 border-blue-400 bg-transparent text-lg font-bold text-white outline-none"
             />
           ) : (
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-white">{activity.name}</h3>
-              {collapsed && hasCollapsibleContent && (
-                <span className="text-white/30 text-xs sm:hidden">▼</span>
-              )}
-            </div>
+            <h3 className="text-lg font-bold text-white">{activity.name}</h3>
           )}
         </div>
         {editing ? (
@@ -397,13 +392,14 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
         )}
       </div>
 
-      {/* Mobile collapsed: show "Show more" hint */}
+      {/* Collapsed: show expand hint */}
       {collapsed && hasCollapsibleContent && !editing && (
         <button
           onClick={() => setCollapsed(false)}
-          className="mt-2 py-2 text-xs text-white/50 hover:text-white/60"
+          className="mt-3 flex items-center gap-1 text-xs text-white/35 hover:text-white/50"
         >
-          Show more...
+          <span>Show details</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3"><path fillRule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
         </button>
       )}
     </div>

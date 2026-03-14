@@ -145,14 +145,14 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Input card */}
-      <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] p-5 sm:p-6">
+      <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] px-5 py-4 sm:px-6 sm:py-5">
         <input
           type="text"
           value={targetProgram}
           onChange={(e) => setTargetProgram(e.target.value)}
           placeholder="Target program — e.g. Waterloo CS"
           disabled={phase !== "input"}
-          className="w-full rounded-xl border border-white/[0.12] bg-white/[0.06] p-3 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10 disabled:opacity-60 sm:p-4 sm:text-base"
+          className="w-full bg-transparent text-[15px] text-white placeholder:text-white/30 focus:outline-none disabled:opacity-60 sm:text-base"
           onKeyDown={(e) => {
             if (e.key === "Enter" && phase === "input") {
               e.preventDefault();

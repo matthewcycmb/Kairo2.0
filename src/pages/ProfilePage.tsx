@@ -101,8 +101,11 @@ export default function ProfilePage({
   const dismissWelcome = (tab?: "advisor" | "apphelper" | "strategy") => {
     setShowWelcome(false);
     if (welcomeKey) try { localStorage.setItem(welcomeKey, "1"); } catch {}
-    if (tab === "strategy") setAutoSubmitStrategy(true);
-    if (tab) handleTabClick(tab);
+    if (tab) {
+      if (tab === "strategy") setAutoSubmitStrategy(true);
+      setActiveTab(tab);
+      if (tab === "advisor") onAdvisorTabOpened();
+    }
   };
 
   // Monthly check-in — show when profile is 30+ days stale
@@ -305,6 +308,7 @@ export default function ProfilePage({
   };
 
   const handleTabClick = (tab: "profile" | "advisor" | "apphelper" | "strategy") => {
+    if (showWelcome && tab !== "profile") dismissWelcome();
     setActiveTab(tab);
     if (tab === "advisor") onAdvisorTabOpened();
   };
@@ -319,16 +323,16 @@ export default function ProfilePage({
   return (
     <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-6 sm:py-8">
       {/* Header */}
-      <div className="relative mb-5">
-        <div className="flex flex-wrap items-start justify-between gap-y-2 sm:flex-nowrap sm:items-center">
-          <div className="min-w-0 flex items-baseline gap-2.5">
-            <h1 className="text-xl font-semibold text-white sm:text-2xl">
+      <div className="relative mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-lg font-semibold text-white sm:text-2xl">
               {activeTab === "profile" && "Profile"}
               {activeTab === "advisor" && "Advisor"}
               {activeTab === "apphelper" && "Writer"}
               {activeTab === "strategy" && "Strategy"}
             </h1>
-            <span className="text-[10px] font-medium tracking-widest text-white/20 uppercase">Kairo</span>
+            <span className="text-[10px] font-medium tracking-widest text-white/15 uppercase">Kairo</span>
           </div>
           {/* Desktop: buttons inline with title. Mobile: hidden here, shown below */}
           <div className="hidden shrink-0 items-center gap-2 sm:flex">
@@ -507,187 +511,87 @@ export default function ProfilePage({
               )}
             </div>
           </div>
-        </div>
 
-        {/* Mobile-only action buttons row */}
-        <div className="mt-2 flex flex-wrap items-center gap-4 sm:hidden">
-          {activeTab === "profile" && (
-            <>
-              {profileId && (
-                <button
-                  onClick={() => setShowSavePopover((v) => !v)}
-                  className="text-xs font-medium text-white/35 transition-colors hover:text-white/60"
-                >
-                  Save
-                </button>
-              )}
-              <button
-                onClick={() => setShowResume(true)}
-                className="text-xs font-medium text-white/35 transition-colors hover:text-white/60"
-              >
-                Resume
-              </button>
-            </>
-          )}
-          {activeTab === "advisor" && (
-            <>
-              <button
-                onClick={onNewConversation}
-                disabled={refreshingAnalysis}
-                className="text-xs font-medium text-white/35 transition-colors hover:text-white/60 disabled:opacity-40"
-              >
-                {refreshingAnalysis ? "Loading..." : "New chat"}
-              </button>
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowPrevChats((v) => !v);
-                    if (!showPrevChats) onListConversations();
-                  }}
-                  className="text-xs font-medium text-white/35 transition-colors hover:text-white/60"
-                >
-                  History
-                </button>
-                {showPrevChats && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowPrevChats(false)} />
-                    <div className="absolute left-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-white/[0.10] bg-white/[0.06] py-1 shadow-xl backdrop-blur-[40px]">
-                      {isViewingPrevious && (
-                        <button
-                          onClick={() => {
-                            onBackToCurrent();
-                            setShowPrevChats(false);
-                          }}
-                          className="w-full border-b border-white/[0.10] px-4 py-2.5 text-left text-sm font-medium text-blue-400 transition-colors hover:bg-white/[0.08]"
-                        >
-                          Back to current chat
-                        </button>
-                      )}
-                      {conversations.length === 0 ? (
-                        <p className="px-4 py-3 text-sm text-white/40">No previous conversations</p>
-                      ) : (
-                        conversations.map((conv) => (
-                          <div
-                            key={conv.id}
-                            className="group flex items-center transition-colors hover:bg-white/[0.08]"
-                          >
-                            <button
-                              onClick={() => {
-                                onLoadConversation(conv.id);
-                                setShowPrevChats(false);
-                              }}
-                              className="min-w-0 flex-1 px-4 py-2.5 text-left"
-                            >
-                              <p className="truncate text-sm text-white/80">{conv.preview}</p>
-                              <p className="text-xs text-white/50">{formatRelativeTime(conv.timestamp)}</p>
+          {/* Mobile-only: inline actions right of title */}
+          <div className="flex items-center gap-3 sm:hidden">
+            {activeTab === "profile" && profileId && (
+              <button onClick={() => setShowSavePopover((v) => !v)} className="text-xs text-white/30 hover:text-white/50">Save</button>
+            )}
+            {activeTab === "profile" && (
+              <button onClick={() => setShowResume(true)} className="text-xs text-white/30 hover:text-white/50">Resume</button>
+            )}
+            {activeTab === "advisor" && (
+              <>
+                <button onClick={onNewConversation} disabled={refreshingAnalysis} className="text-xs text-white/30 hover:text-white/50 disabled:opacity-40">New</button>
+                <div className="relative">
+                  <button onClick={() => { setShowPrevChats((v) => !v); if (!showPrevChats) onListConversations(); }} className="text-xs text-white/30 hover:text-white/50">History</button>
+                  {showPrevChats && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowPrevChats(false)} />
+                      <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.06] py-1 shadow-xl backdrop-blur-[40px]">
+                        {isViewingPrevious && (
+                          <button onClick={() => { onBackToCurrent(); setShowPrevChats(false); }} className="w-full border-b border-white/[0.08] px-4 py-2.5 text-left text-sm font-medium text-blue-400">Back to current</button>
+                        )}
+                        {conversations.length === 0 ? (
+                          <p className="px-4 py-3 text-sm text-white/30">No previous chats</p>
+                        ) : conversations.map((conv) => (
+                          <div key={conv.id} className="group flex items-center hover:bg-white/[0.06]">
+                            <button onClick={() => { onLoadConversation(conv.id); setShowPrevChats(false); }} className="min-w-0 flex-1 px-4 py-2.5 text-left">
+                              <p className="truncate text-sm text-white/70">{conv.preview}</p>
+                              <p className="text-xs text-white/30">{formatRelativeTime(conv.timestamp)}</p>
                             </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteConversation(conv.id);
-                              }}
-                              className="shrink-0 px-3 py-2 text-white/20 opacity-0 transition-all hover:text-red-400 group-hover:opacity-100"
-                              title="Delete conversation"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
-                                <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5A.75.75 0 0 1 9.95 6Z" clipRule="evenodd" />
-                              </svg>
+                            <button onClick={(e) => { e.stopPropagation(); onDeleteConversation(conv.id); }} className="shrink-0 px-3 py-2 text-white/15 hover:text-red-400 opacity-0 group-hover:opacity-100">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5A.75.75 0 0 1 9.95 6Z" clipRule="evenodd" /></svg>
                             </button>
                           </div>
-                        ))
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+            {activeTab === "apphelper" && (
+              <div className="relative">
+                <button onClick={() => { setShowPrevSessions((v) => !v); if (!showPrevSessions) refreshAppHelperSessions(); }} className="text-xs text-white/30 hover:text-white/50">History</button>
+                {showPrevSessions && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowPrevSessions(false)} />
+                    <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.06] py-1 shadow-xl backdrop-blur-[40px]">
+                      {loadedSession && (
+                        <button onClick={() => { setLoadedSession(null); setShowPrevSessions(false); }} className="w-full border-b border-white/[0.08] px-4 py-2.5 text-left text-sm font-medium text-blue-400">New question</button>
                       )}
+                      {appHelperSessions.length === 0 ? (
+                        <p className="px-4 py-3 text-sm text-white/30">No previous sessions</p>
+                      ) : appHelperSessions.map((session) => (
+                        <div key={session.id} className="group flex items-center hover:bg-white/[0.06]">
+                          <button onClick={() => { setLoadedSession(session); setShowPrevSessions(false); }} className="min-w-0 flex-1 px-4 py-2.5 text-left">
+                            <p className="truncate text-sm text-white/70">{session.question}</p>
+                            <p className="text-xs text-white/30">{formatRelativeTime(session.timestamp)}</p>
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); deleteAppHelperSession(session.id); }} className="shrink-0 px-3 py-2 text-white/15 hover:text-red-400 opacity-0 group-hover:opacity-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5A.75.75 0 0 1 9.95 6Z" clipRule="evenodd" /></svg>
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}
               </div>
-            </>
-          )}
-          {activeTab === "apphelper" && (
+            )}
             <div className="relative">
-              <button
-                onClick={() => {
-                  setShowPrevSessions((v) => !v);
-                  if (!showPrevSessions) refreshAppHelperSessions();
-                }}
-                className="text-xs font-medium text-white/35 transition-colors hover:text-white/60"
-              >
-                History
+              <button onClick={() => setShowMenu((v) => !v)} className="text-white/20 hover:text-white/40">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" /></svg>
               </button>
-              {showPrevSessions && (
+              {showMenu && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowPrevSessions(false)} />
-                  <div className="absolute left-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
-                    {loadedSession && (
-                      <button
-                        onClick={() => {
-                          setLoadedSession(null);
-                          setShowPrevSessions(false);
-                        }}
-                        className="w-full border-b border-white/[0.10] px-4 py-2.5 text-left text-sm font-medium text-blue-400 transition-colors hover:bg-white/[0.08]"
-                      >
-                        Start new question
-                      </button>
-                    )}
-                    {appHelperSessions.length === 0 ? (
-                      <p className="px-4 py-3 text-sm text-white/40">No previous sessions</p>
-                    ) : (
-                      appHelperSessions.map((session) => (
-                        <div
-                          key={session.id}
-                          className="group flex items-center transition-colors hover:bg-white/[0.08]"
-                        >
-                          <button
-                            onClick={() => {
-                              setLoadedSession(session);
-                              setShowPrevSessions(false);
-                            }}
-                            className="min-w-0 flex-1 px-4 py-2.5 text-left"
-                          >
-                            <p className="truncate text-sm text-white/80">{session.question}</p>
-                            <p className="text-xs text-white/50">{formatRelativeTime(session.timestamp)}</p>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteAppHelperSession(session.id);
-                            }}
-                            className="shrink-0 px-3 py-2 text-white/20 opacity-0 transition-all hover:text-red-400 group-hover:opacity-100"
-                            title="Delete session"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
-                              <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5A.75.75 0 0 1 9.95 6Z" clipRule="evenodd" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))
-                      )}
+                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                  <div className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.06] py-1 shadow-xl backdrop-blur-[40px]">
+                    <button onClick={() => { onStartOver(); setShowMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-white/50 hover:text-white/70">Start Over</button>
                   </div>
                 </>
               )}
             </div>
-          )}
-          <div className="relative ml-auto">
-            <button
-              onClick={() => setShowMenu((v) => !v)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition-colors hover:text-white/50"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
-                <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
-              </svg>
-            </button>
-            {showMenu && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-xl border border-white/[0.15] bg-white/[0.08] py-1 shadow-xl backdrop-blur-[40px]">
-                  <button
-                    onClick={() => { onStartOver(); setShowMenu(false); }}
-                    className="w-full px-4 py-2.5 text-left text-sm text-white/60 transition-colors hover:bg-white/[0.08] hover:text-white/80"
-                  >
-                    Start Over
-                  </button>
-                </div>
-              </>
-            )}
           </div>
         </div>
       </div>
@@ -703,8 +607,8 @@ export default function ProfilePage({
             onClick={() => handleTabClick(tab)}
             className={`flex-1 whitespace-nowrap rounded-xl px-2 py-2.5 text-xs font-medium transition-all sm:px-4 sm:text-[13px] ${
               activeTab === tab
-                ? "bg-white/[0.12] text-white"
-                : "text-white/35 hover:text-white/55"
+                ? "bg-white/[0.15] text-white shadow-sm"
+                : "text-white/30 hover:text-white/50"
             }`}
           >
             {tab === "profile" && "Profile"}
@@ -722,21 +626,13 @@ export default function ProfilePage({
 
       {/* Welcome card — shown once after onboarding */}
       {showWelcome && activeTab === "profile" && profile.goals && (
-        <div className="mb-8 py-2">
-          <p className="mb-5 text-center text-[15px] text-white/40">
-            Check that everything looks right, then
-          </p>
+        <div className="mb-6 flex items-center justify-between rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-4">
+          <span className="text-sm text-white/50">Everything look right?</span>
           <button
             onClick={() => dismissWelcome("strategy")}
-            className="w-full rounded-2xl border border-white/[0.12] bg-white/[0.08] py-4 text-[15px] font-medium text-white/90 transition-colors hover:bg-white/[0.14]"
+            className="shrink-0 text-sm font-medium text-white/80 transition-colors hover:text-white"
           >
-            See what an admissions officer thinks →
-          </button>
-          <button
-            onClick={() => dismissWelcome()}
-            className="mt-3 w-full py-2 text-xs text-white/20 transition-colors hover:text-white/40"
-          >
-            skip
+            Get AO review →
           </button>
         </div>
       )}

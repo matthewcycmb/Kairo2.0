@@ -276,17 +276,14 @@ export default function AdvisorChat({
             if (ao) {
               const v = getVerdictLabel(ao.verdict);
               return (
-                <div className="py-6">
-                  <div className="rounded-xl border border-white/[0.10] bg-white/[0.04] p-4">
-                    <p className="text-xs font-medium text-white/30">Your strategy review for</p>
-                    <p className="mt-0.5 text-base font-semibold text-white/80">{ao.targetProgram}</p>
-                    <p className={`mt-2 text-lg font-bold ${v.color}`}>{v.label}</p>
-                    <p className="mt-2 text-[15px] leading-[1.6] text-white/60">
-                      {ao.verdict.length > 200 ? ao.verdict.slice(0, 200).trimEnd() + "..." : ao.verdict}
-                    </p>
-                  </div>
-                  <p className="mt-4 text-center text-base text-white/40">
-                    Ask me anything about your review
+                <div className="py-8">
+                  <p className="text-xs text-white/25">{ao.targetProgram}</p>
+                  <p className={`mt-1 text-xl font-bold ${v.color}`}>{v.label}</p>
+                  <p className="mt-3 text-[15px] leading-[1.65] text-white/50">
+                    {ao.verdict.length > 150 ? ao.verdict.slice(0, 150).trimEnd() + "..." : ao.verdict}
+                  </p>
+                  <p className="mt-6 text-center text-sm text-white/25">
+                    Ask anything about your review
                   </p>
                 </div>
               );
