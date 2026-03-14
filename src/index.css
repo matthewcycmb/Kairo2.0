@@ -15,7 +15,7 @@ body::before {
   content: '';
   position: fixed;
   inset: -60px;
-  background: url('/bg-new.avif') center / cover no-repeat;
+  background: url('/bg-dunes.jpg') center / cover no-repeat;
   filter: blur(40px);
   z-index: -1;
 }
