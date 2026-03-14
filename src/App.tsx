@@ -225,7 +225,7 @@ function App() {
       const errorMsg: AdvisorMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Sorry, I had trouble responding. Try again in a moment.",
+        content: `Sorry, something went wrong: ${err instanceof Error ? err.message : "Try again in a moment."}`,
         timestamp: new Date().toISOString(),
       };
       setAdvisorMessages((prev) => [...prev, errorMsg]);
@@ -292,7 +292,7 @@ function App() {
       const errorMsg: AdvisorMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Something went wrong loading your advisor. Check your connection and try again.",
+        content: `Something went wrong: ${err instanceof Error ? err.message : "Check your connection and try again."}`,
         timestamp: new Date().toISOString(),
       };
       setAdvisorMessages([errorMsg]);
@@ -345,7 +345,7 @@ function App() {
       const errorMsg: AdvisorMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Something went wrong starting a new chat. Check your connection and try again.",
+        content: `Something went wrong: ${err instanceof Error ? err.message : "Check your connection and try again."}`,
         timestamp: new Date().toISOString(),
         conversationId: newConvId,
       };
@@ -405,7 +405,7 @@ function App() {
       const errorMsg: AdvisorMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Something went wrong. Check your connection and try again.",
+        content: `Something went wrong: ${err instanceof Error ? err.message : "Check your connection and try again."}`,
         timestamp: new Date().toISOString(),
         conversationId: newConvId,
       };
