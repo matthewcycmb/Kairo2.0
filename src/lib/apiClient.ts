@@ -1,8 +1,8 @@
 import type { ParseRequest, FollowUpRequest, ParseResponse, FollowUpResponse, ExpandRequest, ExpandResponse, ExpandAnswerRequest, ExpandAnswerResponse, AdvisorRequest, AdvisorResponse, AppHelperRequest, AppHelperResponse, StrategyGuideRequest, StrategyGuideResponse, StrategyAORequest, StrategyAOResponse } from "../types/profile";
 
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 2000;
-const FETCH_TIMEOUT_MS = 60_000; // 60 seconds
+const MAX_RETRIES = 1;
+const RETRY_DELAY_MS = 1000;
+const FETCH_TIMEOUT_MS = 45_000; // 45 seconds
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
