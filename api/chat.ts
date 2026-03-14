@@ -597,11 +597,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (body.type === "strategy-guide") {
         prompt = buildStrategyGuidePrompt(body.profile, targetProgram);
         model = "claude-haiku-4-5-20251001";
-        maxTokens = 1024;
+        maxTokens = 2048;
       } else {
         prompt = buildStrategyAOPrompt(body.profile, targetProgram);
         model = "claude-haiku-4-5-20251001";
-        maxTokens = 1024;
+        maxTokens = 2048;
       }
 
       const strategyMessage = await anthropic.messages.create({
