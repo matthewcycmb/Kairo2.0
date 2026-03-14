@@ -214,7 +214,7 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-3 px-1">
+        <div className="flex items-center gap-3 px-1">
           <span className="truncate text-sm text-white/50">{targetProgram}</span>
           <button
             onClick={handleReset}
@@ -247,11 +247,11 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
       {/* AO Review — show once ready */}
       {(aoReady || (phase === "results" && aoData)) && (
         <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8">
-          <h3 className="text-xs font-medium tracking-widest text-white/25 uppercase">Admissions Officer Review</h3>
+          <h3 className="mb-4 text-xs font-medium tracking-widest text-white/20 uppercase">Admissions Officer Review</h3>
           {aoData && verdictStyle && (
             <div>
               {/* Verdict hero */}
-              <div className={`mt-6 rounded-2xl border ${verdictStyle.border} ${verdictStyle.bg} p-6 sm:p-8`}>
+              <div className={`rounded-2xl border ${verdictStyle.border} ${verdictStyle.bg} p-6 sm:p-8`}>
                 <div className="flex items-start justify-between">
                   <span className={`text-2xl font-bold ${verdictStyle.color} sm:text-3xl`}>{verdictStyle.label}</span>
                   <CopyButton text={`${verdictStyle.label} for ${targetProgram}\n\n${aoData.verdict}${aoData.nextSteps ? `\n\nNext Steps:\n${aoData.nextSteps}` : ""}`} />
@@ -308,8 +308,8 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
       {/* Strategy Guide — show once ready */}
       {(guideReady || (phase === "results" && guideData)) && guideData && (
         <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8">
-          <h3 className="text-xs font-medium tracking-widest text-white/25 uppercase">Program Strategy Guide</h3>
-          <div className="mt-2">
+          <h3 className="mb-2 text-xs font-medium tracking-widest text-white/20 uppercase">Program Strategy Guide</h3>
+          <div>
               <Accordion title="What They Look For" defaultOpen>
                 <RichText text={guideData.whatTheyLookFor} />
               </Accordion>

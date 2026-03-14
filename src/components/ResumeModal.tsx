@@ -242,59 +242,33 @@ export default function ResumeModal({ profile, onClose }: ResumeModalProps) {
         className="resume-content mx-4 my-8 w-full max-w-3xl rounded-2xl border border-white/[0.15] bg-white/[0.08] p-6 shadow-2xl backdrop-blur-[40px] sm:my-16 sm:p-8"
       >
         {/* Toolbar — hidden in print */}
-        <div className="mb-6 flex items-center justify-between print:hidden">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-white">Resume</h2>
-            {hiddenCount > 0 && !editing && (
-              <span className="rounded-full bg-white/[0.10] px-2.5 py-0.5 text-xs text-white/50">
-                {hiddenCount} hidden
-              </span>
-            )}
+        <div className="mb-6 print:hidden">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-white sm:text-xl">Resume</h2>
+            <button
+              onClick={onClose}
+              className="text-xs text-white/30 hover:text-white/50"
+            >
+              Close
+            </button>
           </div>
-          <div className="flex gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             {editing ? (
               <>
                 {hiddenCount > 0 && (
-                  <button
-                    onClick={showAll}
-                    className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
-                  >
-                    Show all
+                  <button onClick={showAll} className="rounded-lg border border-white/[0.10] bg-white/[0.08] px-3 py-1.5 text-xs text-white/60 hover:bg-white/[0.14]">
+                    Show all ({hiddenCount})
                   </button>
                 )}
-                <button
-                  onClick={() => setEditing(false)}
-                  className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
-                >
+                <button onClick={() => setEditing(false)} className="rounded-lg border border-white/[0.10] bg-white/[0.08] px-3 py-1.5 text-xs text-white/60 hover:bg-white/[0.14]">
                   Done
                 </button>
               </>
             ) : (
               <>
-                <button
-                  onClick={() => setEditing(true)}
-                  className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={handleCopy}
-                  className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
-                >
-                  {copied ? "Copied!" : "Copy"}
-                </button>
-                <button
-                  onClick={handleDownloadPDF}
-                  className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
-                >
-                  Download PDF
-                </button>
-                <button
-                  onClick={onClose}
-                  className="rounded-lg border border-white/[0.15] bg-white/[0.15] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/[0.22]"
-                >
-                  Close
-                </button>
+                <button onClick={() => setEditing(true)} className="rounded-lg border border-white/[0.10] bg-white/[0.08] px-3 py-1.5 text-xs text-white/60 hover:bg-white/[0.14]">Edit</button>
+                <button onClick={handleCopy} className="rounded-lg border border-white/[0.10] bg-white/[0.08] px-3 py-1.5 text-xs text-white/60 hover:bg-white/[0.14]">{copied ? "Copied!" : "Copy"}</button>
+                <button onClick={handleDownloadPDF} className="rounded-lg border border-white/[0.10] bg-white/[0.08] px-3 py-1.5 text-xs text-white/60 hover:bg-white/[0.14]">PDF</button>
               </>
             )}
           </div>
