@@ -93,11 +93,12 @@ export default function RecentUpdates({ profile, profileId }: RecentUpdatesProps
           ref={inputRef}
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => setInput(e.target.value.slice(0, 200))}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSubmit(); } }}
           placeholder="What happened this week?"
+          maxLength={200}
           disabled={submitting}
-          className="flex-1 bg-transparent text-sm text-white placeholder:text-white/25 focus:outline-none disabled:opacity-50"
+          className="min-w-0 flex-1 truncate bg-transparent text-sm text-white placeholder:text-white/25 focus:outline-none disabled:opacity-50"
         />
         {input.trim().length >= 3 && (
           <button
