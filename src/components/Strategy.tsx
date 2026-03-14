@@ -131,18 +131,34 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function loadCachedStrategy(): { ao: StrategyAOResponse; guide: StrategyGuideResponse; program: string } | null {
+  try {
+    const raw = localStorage.getItem("kairo-strategy-results");
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data?.ao?.verdict && data?.guide?.whatTheyLookFor && data?.program) return data;
+  } catch {}
+  return null;
+}
+
+function saveCachedStrategy(ao: StrategyAOResponse, guide: StrategyGuideResponse, program: string) {
+  try { localStorage.setItem("kairo-strategy-results", JSON.stringify({ ao, guide, program })); } catch {}
+}
+
 export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: StrategyProps) {
+  const cached = useRef(loadCachedStrategy());
+
   const [targetProgram, setTargetProgram] = useState(
-    profile.goals?.targetUniversities || ""
+    cached.current?.program || profile.goals?.targetUniversities || ""
   );
-  const [phase, setPhase] = useState<"input" | "loading" | "results">("input");
+  const [phase, setPhase] = useState<"input" | "loading" | "results">(cached.current ? "results" : "input");
   const [error, setError] = useState<string | null>(null);
 
-  const [aoData, setAoData] = useState<StrategyAOResponse | null>(null);
-  const [guideData, setGuideData] = useState<StrategyGuideResponse | null>(null);
+  const [aoData, setAoData] = useState<StrategyAOResponse | null>(cached.current?.ao || null);
+  const [guideData, setGuideData] = useState<StrategyGuideResponse | null>(cached.current?.guide || null);
 
-  const [aoReady, setAoReady] = useState(false);
-  const [guideReady, setGuideReady] = useState(false);
+  const [aoReady, setAoReady] = useState(!!cached.current?.ao);
+  const [guideReady, setGuideReady] = useState(!!cached.current?.guide);
 
   const autoSubmittedRef = useRef(false);
   useEffect(() => {
@@ -163,14 +179,18 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
     setGuideReady(false);
 
     const program = targetProgram.trim();
+    let aoResult: StrategyAOResponse | null = null;
+    let guideResult: StrategyGuideResponse | null = null;
 
     const results = await Promise.allSettled([
       callApi({ type: "strategy-ao", profile, targetProgram: program }).then((r) => {
+        aoResult = r;
         setAoData(r);
         setAoReady(true);
         try { localStorage.setItem("kairo-ao-review", JSON.stringify({ ...r, targetProgram: program })); } catch {}
       }),
       callApi({ type: "strategy-guide", profile, targetProgram: program }).then((r) => {
+        guideResult = r;
         setGuideData(r);
         setGuideReady(true);
       }),
@@ -185,11 +205,17 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
       return;
     }
 
+    // Cache results for persistence across page refreshes
+    if (aoResult && guideResult) {
+      saveCachedStrategy(aoResult, guideResult, program);
+    }
+
     setPhase("results");
   };
 
   const handleReset = () => {
     setPhase("input");
+    try { localStorage.removeItem("kairo-strategy-results"); } catch {}
     setAoData(null);
     setGuideData(null);
     setAoReady(false);
