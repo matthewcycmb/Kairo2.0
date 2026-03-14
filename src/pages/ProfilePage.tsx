@@ -577,8 +577,8 @@ export default function ProfilePage({
               </div>
             )}
             <div className="relative">
-              <button onClick={() => setShowMenu((v) => !v)} className="text-white/20 hover:text-white/40">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" /></svg>
+              <button onClick={() => setShowMenu((v) => !v)} className="flex h-7 w-7 items-center justify-center text-white/35 hover:text-white/50">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4.5 w-4.5"><path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" /></svg>
               </button>
               {showMenu && (
                 <>

@@ -239,13 +239,13 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
         </div>
       )}
 
-      {/* Single loading state — before any results arrive */}
-      {phase === "loading" && !aoReady && !guideReady && (
+      {/* Loading state — show until AO review is ready */}
+      {(phase === "loading" || phase === "results") && !aoReady && (
         loadingSpinner(`Analyzing for ${targetProgram}...`)
       )}
 
-      {/* AO Review — show once ready */}
-      {(aoReady || (phase === "results" && aoData)) && (
+      {/* AO Review — show once ready (hero, always first) */}
+      {aoReady && aoData && (
         <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8">
           <h3 className="mb-4 text-xs font-medium tracking-widest text-white/20 uppercase">Admissions Officer Review</h3>
           {aoData && verdictStyle && (
@@ -305,8 +305,8 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
         </div>
       )}
 
-      {/* Strategy Guide — show once ready */}
-      {(guideReady || (phase === "results" && guideData)) && guideData && (
+      {/* Strategy Guide — show only after AO review is ready */}
+      {aoReady && guideReady && guideData && (
         <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8">
           <h3 className="mb-2 text-xs font-medium tracking-widest text-white/20 uppercase">Program Strategy Guide</h3>
           <div>
