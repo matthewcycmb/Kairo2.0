@@ -150,19 +150,31 @@ function saveCachedStrategy(profileId: string | null, ao: StrategyAOResponse, gu
 }
 
 export default function Strategy({ profile, profileId, onDiscussWithAdvisor, autoSubmit }: StrategyProps) {
-  const cached = useRef(loadCachedStrategy(profileId));
-
-  const [targetProgram, setTargetProgram] = useState(
-    cached.current?.program || profile.goals?.targetUniversities || ""
-  );
-  const [phase, setPhase] = useState<"input" | "loading" | "results">(cached.current ? "results" : "input");
+  const [targetProgram, setTargetProgram] = useState(profile.goals?.targetUniversities || "");
+  const [phase, setPhase] = useState<"input" | "loading" | "results">("input");
   const [error, setError] = useState<string | null>(null);
 
-  const [aoData, setAoData] = useState<StrategyAOResponse | null>(cached.current?.ao || null);
-  const [guideData, setGuideData] = useState<StrategyGuideResponse | null>(cached.current?.guide || null);
+  const [aoData, setAoData] = useState<StrategyAOResponse | null>(null);
+  const [guideData, setGuideData] = useState<StrategyGuideResponse | null>(null);
 
-  const [aoReady, setAoReady] = useState(!!cached.current?.ao);
-  const [guideReady, setGuideReady] = useState(!!cached.current?.guide);
+  const [aoReady, setAoReady] = useState(false);
+  const [guideReady, setGuideReady] = useState(false);
+
+  // Load cached results when profileId becomes available
+  const cacheLoadedRef = useRef(false);
+  useEffect(() => {
+    if (cacheLoadedRef.current || !profileId) return;
+    const cached = loadCachedStrategy(profileId);
+    if (cached) {
+      cacheLoadedRef.current = true;
+      setAoData(cached.ao);
+      setGuideData(cached.guide);
+      setAoReady(true);
+      setGuideReady(true);
+      setTargetProgram(cached.program);
+      setPhase("results");
+    }
+  }, [profileId]);
 
   const autoSubmittedRef = useRef(false);
   useEffect(() => {
