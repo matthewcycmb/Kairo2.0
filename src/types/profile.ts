@@ -146,6 +146,16 @@ export interface AppHelperResponse {
   answer?: string;
 }
 
+export interface QuickInsightRequest {
+  type: "quick-insight";
+  profile: StudentProfile;
+  update: string;
+}
+
+export interface QuickInsightResponse {
+  insight: string;
+}
+
 export interface StrategyGuideRequest {
   type: "strategy-guide";
   profile: StudentProfile;

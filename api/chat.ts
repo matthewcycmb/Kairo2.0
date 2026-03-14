@@ -487,6 +487,30 @@ Respond with JSON. Keep each field to 3-5 sentences:
 First person as AO. Name activities. Be direct, no filler.`;
 }
 
+function buildQuickInsightPrompt(profile: AdvisorProfile, update: string): string {
+  const activitiesSummary = buildAppHelperActivitiesSummary(profile);
+  const goalsSection = profile.goals
+    ? `Grade: ${profile.goals.grade}\nTarget: ${profile.goals.targetUniversities || "Not set"}`
+    : "";
+
+  return `A student just logged a new update about their week. Read their full profile, then give them ONE sharp insight about what this update means for their application story. Be specific to THEIR profile.
+
+PROFILE:
+${activitiesSummary}
+${goalsSection}
+
+UPDATE: "${update}"
+
+Write 1-2 sentences MAX. Connect this update to their bigger picture. Examples of good insights:
+- "This Strive win shifts you from coder to founder — your Stanford story just got stronger."
+- "Your content hit 2k but you still have zero leadership roles — which one actually gets you in?"
+- "Third volunteer thing this month. Your profile is getting wider, not deeper. Pick one and go all in."
+
+The insight should feel like a coach watching their journey and reacting in real time. Be honest, specific, reference their activities by name.
+
+Respond with JSON: { "insight": "your insight here" }`;
+}
+
 function buildExpandAnswerPrompt(
   activity: unknown,
   answers: { question: string; answer: string }[]
@@ -585,6 +609,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body.question !== "string" || body.question.trim().length < 5 || body.question.length > 2000) {
         return res.status(400).json({ error: "Question must be 5-2,000 characters" });
       }
+    } else if (body.type === "quick-insight") {
+      if (!body.profile || !Array.isArray(body.profile.activities) || body.profile.activities.length === 0) {
+        return res.status(400).json({ error: "Invalid profile" });
+      }
+      if (typeof body.update !== "string" || body.update.trim().length < 3 || body.update.length > 500) {
+        return res.status(400).json({ error: "Update must be 3-500 characters" });
+      }
     } else if (body.type === "strategy-guide" || body.type === "strategy-ao") {
       if (!body.profile || !Array.isArray(body.profile.activities) || body.profile.activities.length === 0) {
         return res.status(400).json({ error: "Invalid profile — need at least one activity" });
@@ -597,6 +628,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } else {
       return res.status(400).json({ error: "Invalid request type" });
+    }
+
+    if (body.type === "quick-insight") {
+      const prompt = buildQuickInsightPrompt(body.profile, body.update.trim());
+      const msg = await anthropic.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 256,
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const textBlock = msg.content.find((b) => b.type === "text");
+      if (!textBlock || textBlock.type !== "text") {
+        return res.status(500).json({ error: "No response from AI" });
+      }
+
+      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return res.status(200).json({ insight: parsed.insight || textBlock.text });
+        } catch {}
+      }
+      return res.status(200).json({ insight: textBlock.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").replace(/[{}"]/g, "").trim() });
     }
 
     if (body.type === "strategy-guide" || body.type === "strategy-ao") {

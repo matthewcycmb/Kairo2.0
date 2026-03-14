@@ -9,6 +9,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import AdvisorChat from "../components/AdvisorChat";
 import AppHelper, { type AppHelperSession } from "../components/AppHelper";
 import Strategy from "../components/Strategy";
+import RecentUpdates from "../components/RecentUpdates";
 import ResumeModal from "../components/ResumeModal";
 
 function formatRelativeTime(timestamp: string): string {
@@ -678,13 +679,16 @@ export default function ProfilePage({
             </div>
           )}
 
-          {/* Add activity — at the top for easy access */}
+          {/* Recent Updates — quick-add with AI insights */}
+          <RecentUpdates profile={profile} profileId={profileId} />
+
+          {/* Add activity — full brain dump (from + New button) */}
           {forgotStep === "input" && (
             <div className="mb-6 rounded-2xl border border-white/[0.10] bg-white/[0.05] px-5 py-4">
               <textarea
                 value={forgotText}
                 onChange={(e) => setForgotText(e.target.value)}
-                placeholder="What's new? e.g. won 2nd at a case competition, started tutoring..."
+                placeholder="Describe new activities in detail to add to your profile..."
                 rows={2}
                 autoFocus
                 className="w-full resize-none bg-transparent text-[15px] text-white placeholder:text-white/25 focus:outline-none"
@@ -701,7 +705,7 @@ export default function ProfilePage({
                   disabled={forgotText.trim().length < 10 || isLoading}
                   className="text-sm font-medium text-white/60 transition-colors hover:text-white disabled:opacity-30"
                 >
-                  Add →
+                  Add to profile →
                 </button>
               </div>
             </div>

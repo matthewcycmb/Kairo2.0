@@ -1,4 +1,4 @@
-import type { ParseRequest, FollowUpRequest, ParseResponse, FollowUpResponse, ExpandRequest, ExpandResponse, ExpandAnswerRequest, ExpandAnswerResponse, AdvisorRequest, AdvisorResponse, AppHelperRequest, AppHelperResponse, StrategyGuideRequest, StrategyGuideResponse, StrategyAORequest, StrategyAOResponse } from "../types/profile";
+import type { ParseRequest, FollowUpRequest, ParseResponse, FollowUpResponse, ExpandRequest, ExpandResponse, ExpandAnswerRequest, ExpandAnswerResponse, AdvisorRequest, AdvisorResponse, AppHelperRequest, AppHelperResponse, StrategyGuideRequest, StrategyGuideResponse, StrategyAORequest, StrategyAOResponse, QuickInsightRequest, QuickInsightResponse } from "../types/profile";
 
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1000;
@@ -14,8 +14,8 @@ function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number):
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
-type ApiRequest = ParseRequest | FollowUpRequest | ExpandRequest | ExpandAnswerRequest | AdvisorRequest | AppHelperRequest | StrategyGuideRequest | StrategyAORequest;
-type ApiResponse = ParseResponse | FollowUpResponse | ExpandResponse | ExpandAnswerResponse | AdvisorResponse | AppHelperResponse | StrategyGuideResponse | StrategyAOResponse;
+type ApiRequest = ParseRequest | FollowUpRequest | ExpandRequest | ExpandAnswerRequest | AdvisorRequest | AppHelperRequest | StrategyGuideRequest | StrategyAORequest | QuickInsightRequest;
+type ApiResponse = ParseResponse | FollowUpResponse | ExpandResponse | ExpandAnswerResponse | AdvisorResponse | AppHelperResponse | StrategyGuideResponse | StrategyAOResponse | QuickInsightResponse;
 
 export async function callApi(request: ParseRequest): Promise<ParseResponse>;
 export async function callApi(request: FollowUpRequest): Promise<FollowUpResponse>;
@@ -25,6 +25,7 @@ export async function callApi(request: AdvisorRequest): Promise<AdvisorResponse>
 export async function callApi(request: AppHelperRequest): Promise<AppHelperResponse>;
 export async function callApi(request: StrategyGuideRequest): Promise<StrategyGuideResponse>;
 export async function callApi(request: StrategyAORequest): Promise<StrategyAOResponse>;
+export async function callApi(request: QuickInsightRequest): Promise<QuickInsightResponse>;
 export async function callApi(request: ApiRequest): Promise<ApiResponse> {
   let lastError: Error | null = null;
 
