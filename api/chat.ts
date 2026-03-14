@@ -57,7 +57,7 @@ setInterval(() => {
 const MAX_TEXT_LENGTH = 10_000;
 const MAX_ACTIVITIES = 50;
 const MAX_ANSWERS = 50;
-const MAX_MESSAGES = 30;
+const MAX_MESSAGES = 100;
 
 function getClientIp(req: VercelRequest): string {
   return (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || "unknown";
