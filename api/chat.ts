@@ -293,16 +293,20 @@ function buildAdvisorUserPrompt(
 
 ${strategyContext}
 
-They clicked "Discuss with Advisor" because they want to talk about this. Your job: skip any redundant analysis they've already seen. Instead, pick the single most important finding from the review and go deep on it — what it means for them specifically, what they should do about it THIS WEEK, and one creative combination that addresses their biggest gap.
+They clicked "Discuss with Advisor" because they want to act on this. Your job:
 
-CRITICAL: Use the STUDENT PROFILE in your system prompt as the source of truth for facts — the exact activities, roles, hours, achievements. The strategy review above may have paraphrased or summarized inaccurately. Never state facts about the student that aren't in their actual profile.
+1. Acknowledge the verdict in one sentence — don't repeat the whole review.
+2. Focus on the NEXT STEPS from the review. Pick the most impactful one and break it down into something they can literally start TODAY. Be specific — not "get more leadership" but "DM your team group chat tonight and propose captaining next season."
+3. End with a CREATIVE COMBINATION — look at their existing activities and show them how to merge two into something bigger. If they're building an app, tell them to turn it into a startup. If they volunteer and code, tell them to build a tool for the org they volunteer at. If they play a sport and create content, tell them to start coaching content. The combination should feel like an unlock — "wait, I can do that?" Think: what would make this student's profile go from forgettable to memorable in 3 months?
 
-Be direct, conversational, 200 words max. Reference their specific activities by name. End with a question that makes them think.
+CRITICAL: Use the STUDENT PROFILE in your system prompt as the source of truth for facts. Never invent or exaggerate activities, counts, or achievements.
+
+250 words max. Be direct, conversational. Reference their specific activities by name.
 
 Respond with JSON:
 {
   "message": "Your response. Use \\n\\n between paragraphs. Use **bold** for emphasis. No bullets.",
-  "suggestions": ["A question the student is already half-thinking — their inner voice, not yours. Short, specific.", "Another thought they're probably having", "A doubt or realization triggered by the review"]
+  "suggestions": ["A bold next move they haven't considered — specific to their activities, not generic. e.g. 'What if I turned my app into an actual business?'", "A doubt they're sitting with after reading the review — in their voice", "An uncomfortable question about their profile that they need to face"]
 }
 
 Return ONLY valid JSON, no extra text`;
