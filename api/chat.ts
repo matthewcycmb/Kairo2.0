@@ -295,7 +295,9 @@ ${strategyContext}
 
 They clicked "Discuss with Advisor" because they want to talk about this. Your job: skip any redundant analysis they've already seen. Instead, pick the single most important finding from the review and go deep on it — what it means for them specifically, what they should do about it THIS WEEK, and one creative combination that addresses their biggest gap.
 
-Be direct, conversational, 200 words max. Reference their specific activities. End with a question that makes them think.
+CRITICAL: Use the STUDENT PROFILE in your system prompt as the source of truth for facts — the exact activities, roles, hours, achievements. The strategy review above may have paraphrased or summarized inaccurately. Never state facts about the student that aren't in their actual profile.
+
+Be direct, conversational, 200 words max. Reference their specific activities by name. End with a question that makes them think.
 
 Respond with JSON:
 {
@@ -331,6 +333,8 @@ Return ONLY valid JSON, no extra text`;
     .join("\n\n");
 
   return `Conversation so far:\n\n${history}\n\nRespond to the student's latest message.
+
+CRITICAL: Only state facts that are in the STUDENT PROFILE in your system prompt. Never invent, exaggerate, or miscount activities, achievements, or details. If the student has 1 competition, say 1, not 4.
 
 150 words max. Every follow-up must deliver a NEW insight they didn't get in previous messages — never reheat old points. Read the conversation history and pick the move that fits best:
 
