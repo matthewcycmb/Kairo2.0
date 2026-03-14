@@ -5,6 +5,7 @@ import { formatResumeAsText } from "../lib/profileUtils";
 
 interface ResumeModalProps {
   profile: StudentProfile;
+  profileId: string | null;
   onClose: () => void;
 }
 
@@ -30,11 +31,13 @@ interface ResumeData {
   activityOverrides: Record<string, ActivityOverride>;
 }
 
-const STORAGE_KEY = "kairo-resume-fields";
+function getStorageKey(profileId: string | null) {
+  return profileId ? `kairo-resume-${profileId}` : "kairo-resume-fields";
+}
 
-function loadData(profile: StudentProfile): ResumeData {
+function loadData(profile: StudentProfile, profileId: string | null): ResumeData {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(getStorageKey(profileId));
     if (saved) {
       const parsed = JSON.parse(saved);
       // Support old format (just fields) and new format (fields + hidden)
@@ -82,9 +85,9 @@ const ACTIVITY_CATEGORIES: ActivityCategory[] = [
 
 const VOLUNTEERING_CATEGORIES: ActivityCategory[] = ["Volunteering"];
 
-export default function ResumeModal({ profile, onClose }: ResumeModalProps) {
+export default function ResumeModal({ profile, profileId, onClose }: ResumeModalProps) {
   const [copied, setCopied] = useState(false);
-  const [data, setData] = useState<ResumeData>(() => loadData(profile));
+  const [data, setData] = useState<ResumeData>(() => loadData(profile, profileId));
   const [editing, setEditing] = useState(false);
   const resumeRef = useRef<HTMLDivElement>(null);
 
@@ -94,8 +97,8 @@ export default function ResumeModal({ profile, onClose }: ResumeModalProps) {
   const hiddenSkills = new Set(data.hiddenSkills);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data]);
+    try { localStorage.setItem(getStorageKey(profileId), JSON.stringify(data)); } catch {}
+  }, [data, profileId]);
 
   const updateField = (key: keyof ResumeFields, value: string) => {
     setData((prev) => ({ ...prev, fields: { ...prev.fields, [key]: value } }));

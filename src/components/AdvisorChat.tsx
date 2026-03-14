@@ -169,7 +169,9 @@ function getVerdictLabel(verdict: string): { label: string; color: string } {
 
 function loadAoReview(): AoReviewSummary | null {
   try {
-    const raw = localStorage.getItem("kairo-ao-review");
+    const currentProfileId = new URLSearchParams(window.location.search).get("p");
+    const key = currentProfileId ? `kairo-ao-review-${currentProfileId}` : "kairo-ao-review";
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (data?.verdict && data?.targetProgram) return data;

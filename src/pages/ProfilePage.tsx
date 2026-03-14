@@ -815,7 +815,7 @@ export default function ProfilePage({
 
       {/* Strategy tab content — kept mounted to preserve state */}
       <div className={activeTab === "strategy" ? "flex-1" : "hidden"}>
-        <Strategy profile={profile} onDiscussWithAdvisor={handleDiscussWithAdvisor} autoSubmit={autoSubmitStrategy} />
+        <Strategy profile={profile} profileId={profileId} onDiscussWithAdvisor={handleDiscussWithAdvisor} autoSubmit={autoSubmitStrategy} />
       </div>
 
       {showSavePopover && (
@@ -847,7 +847,7 @@ export default function ProfilePage({
       )}
 
       {showResume && (
-        <ResumeModal profile={profile} onClose={() => setShowResume(false)} />
+        <ResumeModal profile={profile} profileId={profileId} onClose={() => setShowResume(false)} />
       )}
     </div>
   );

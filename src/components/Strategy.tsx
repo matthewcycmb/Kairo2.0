@@ -56,6 +56,7 @@ function StagedLoader({ program }: { program: string }) {
 
 interface StrategyProps {
   profile: StudentProfile;
+  profileId: string | null;
   onDiscussWithAdvisor?: (strategyContext: string) => void;
   autoSubmit?: boolean;
 }
@@ -132,9 +133,10 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function loadCachedStrategy(): { ao: StrategyAOResponse; guide: StrategyGuideResponse; program: string } | null {
+function loadCachedStrategy(profileId: string | null): { ao: StrategyAOResponse; guide: StrategyGuideResponse; program: string } | null {
+  if (!profileId) return null;
   try {
-    const raw = localStorage.getItem("kairo-strategy-results");
+    const raw = localStorage.getItem(`kairo-strategy-${profileId}`);
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (data?.ao?.verdict && data?.guide?.whatTheyLookFor && data?.program) return data;
@@ -142,12 +144,13 @@ function loadCachedStrategy(): { ao: StrategyAOResponse; guide: StrategyGuideRes
   return null;
 }
 
-function saveCachedStrategy(ao: StrategyAOResponse, guide: StrategyGuideResponse, program: string) {
-  try { localStorage.setItem("kairo-strategy-results", JSON.stringify({ ao, guide, program })); } catch {}
+function saveCachedStrategy(profileId: string | null, ao: StrategyAOResponse, guide: StrategyGuideResponse, program: string) {
+  if (!profileId) return;
+  try { localStorage.setItem(`kairo-strategy-${profileId}`, JSON.stringify({ ao, guide, program })); } catch {}
 }
 
-export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: StrategyProps) {
-  const cached = useRef(loadCachedStrategy());
+export default function Strategy({ profile, profileId, onDiscussWithAdvisor, autoSubmit }: StrategyProps) {
+  const cached = useRef(loadCachedStrategy(profileId));
 
   const [targetProgram, setTargetProgram] = useState(
     cached.current?.program || profile.goals?.targetUniversities || ""
@@ -188,7 +191,7 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
         aoResult = r;
         setAoData(r);
         setAoReady(true);
-        try { localStorage.setItem("kairo-ao-review", JSON.stringify({ ...r, targetProgram: program })); } catch {}
+        try { localStorage.setItem(profileId ? `kairo-ao-review-${profileId}` : "kairo-ao-review", JSON.stringify({ ...r, targetProgram: program })); } catch {}
       }),
       callApi({ type: "strategy-guide", profile, targetProgram: program }).then((r) => {
         guideResult = r;
@@ -210,7 +213,7 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
 
     // Cache results for persistence across page refreshes
     if (aoResult && guideResult) {
-      saveCachedStrategy(aoResult, guideResult, program);
+      saveCachedStrategy(profileId, aoResult, guideResult, program);
     }
 
     setPhase("results");
@@ -218,7 +221,7 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
 
   const handleReset = () => {
     setPhase("input");
-    try { localStorage.removeItem("kairo-strategy-results"); } catch {}
+    if (profileId) try { localStorage.removeItem(`kairo-strategy-${profileId}`); } catch {}
     setAoData(null);
     setGuideData(null);
     setAoReady(false);
