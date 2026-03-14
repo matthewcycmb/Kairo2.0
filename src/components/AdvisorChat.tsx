@@ -43,7 +43,7 @@ function sanitizeContent(content: unknown): string {
 }
 
 /** Typewriter hook — reveals text word by word */
-function useTypewriter(text: string, active: boolean, speed: number = 30) {
+function useTypewriter(text: string, active: boolean, speed: number = 45) {
   const [wordCount, setWordCount] = useState(0);
   const words = useMemo(() => text.split(/(\s+)/), [text]);
   const totalWords = words.length;
@@ -56,8 +56,8 @@ function useTypewriter(text: string, active: boolean, speed: number = 30) {
     setWordCount(0);
     let i = 0;
     const interval = setInterval(() => {
-      // Reveal 1-3 tokens per tick for natural pacing
-      const step = i < 10 ? 1 : i < 40 ? 2 : 3;
+      // Reveal 1-2 tokens per tick for slower, more readable pacing
+      const step = i < 20 ? 1 : 2;
       i = Math.min(i + step, totalWords);
       setWordCount(i);
       if (i >= totalWords) clearInterval(interval);
@@ -69,6 +69,43 @@ function useTypewriter(text: string, active: boolean, speed: number = 30) {
     displayedText: words.slice(0, wordCount).join(""),
     isDone: wordCount >= totalWords,
   };
+}
+
+const ADVISOR_LOADING_STAGES = [
+  "Reading your profile...",
+  "Analyzing your activities...",
+  "Finding patterns...",
+  "Preparing your advice...",
+];
+
+function AdvisorLoader() {
+  const [stage, setStage] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStage((s) => (s < ADVISOR_LOADING_STAGES.length - 1 ? s + 1 : s));
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress((p) => p >= 90 ? p : p + (90 - p) * 0.04);
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-5 py-16">
+      <div className="w-48">
+        <div className="h-[2px] overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="h-full rounded-full bg-white/20 transition-all duration-500" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+      <p className="text-sm text-white/35 animate-[fadeIn_0.3s_ease-out]" key={stage}>{ADVISOR_LOADING_STAGES[stage]}</p>
+    </div>
+  );
 }
 
 /** Typing indicator — three pulsing dots */
@@ -280,13 +317,7 @@ export default function AdvisorChat({
       <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/[0.08] bg-white/[0.03]">
         {/* Messages area — independently scrollable */}
         <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
-          {isRefreshing && (
-            <div className="flex h-full flex-col items-center justify-center py-16">
-              <p className="text-center text-lg font-medium text-white/50">
-                Starting new advisor chat...
-              </p>
-            </div>
-          )}
+          {isRefreshing && <AdvisorLoader />}
 
           {!isRefreshing && !isLoading && advisorMessages.length === 0 && (() => {
             const ao = loadAoReview();

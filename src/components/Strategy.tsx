@@ -150,7 +150,7 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
       autoSubmittedRef.current = true;
       handleAnalyze();
     }
-  }); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [autoSubmit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAnalyze = async () => {
     if (targetProgram.trim().length < 3) return;

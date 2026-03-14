@@ -146,7 +146,7 @@ export default function ProfilePage({
   const deleteAppHelperSession = useCallback((sessionId: string) => {
     if (!appHelperStorageKey) return;
     const updated = appHelperSessions.filter((s) => s.id !== sessionId);
-    localStorage.setItem(appHelperStorageKey, JSON.stringify(updated));
+    try { localStorage.setItem(appHelperStorageKey, JSON.stringify(updated)); } catch {}
     setAppHelperSessions(updated);
     onAppHelperSessionsChanged?.(updated);
     if (loadedSession?.id === sessionId) setLoadedSession(null);
@@ -515,7 +515,10 @@ export default function ProfilePage({
           {/* Mobile-only: inline actions right of title */}
           <div className="flex items-center gap-3 sm:hidden">
             {activeTab === "profile" && (
-              <button onClick={() => setForgotStep(forgotStep === "idle" ? "input" : "idle")} className="text-xs font-medium text-white/50 hover:text-white/70">+ New</button>
+              <>
+                <button onClick={() => setForgotStep(forgotStep === "idle" ? "input" : "idle")} className="text-xs font-medium text-white/50 hover:text-white/70">+ New</button>
+                <button onClick={() => setShowResume(true)} className="text-xs text-white/30 hover:text-white/50">Resume</button>
+              </>
             )}
             {activeTab === "advisor" && (
               <>

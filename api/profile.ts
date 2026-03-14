@@ -414,6 +414,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const updateData: Record<string, unknown> = {};
+      if (updates.status && !["pending", "completed"].includes(updates.status)) {
+        return res.status(400).json({ error: "Invalid status value" });
+      }
       if (updates.status) updateData.status = updates.status;
       if (updates.status === "completed") updateData.completed_at = new Date().toISOString();
 

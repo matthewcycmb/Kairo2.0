@@ -567,6 +567,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (body.isFirstMessage !== undefined && typeof body.isFirstMessage !== "boolean") {
         return res.status(400).json({ error: "Invalid isFirstMessage value" });
       }
+      if (body.strategyContext !== undefined && (typeof body.strategyContext !== "string" || body.strategyContext.length > 5000)) {
+        return res.status(400).json({ error: "Invalid strategy context" });
+      }
     } else if (body.type === "app-helper") {
       if (!body.profile || !Array.isArray(body.profile.activities)) {
         return res.status(400).json({ error: "Invalid profile" });

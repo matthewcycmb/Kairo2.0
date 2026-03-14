@@ -71,6 +71,7 @@ function App() {
       .then((loaded) => {
         if (loaded) {
           setProfile(loaded);
+          try { localStorage.setItem(`kairo_profile_${initialProfileId}`, JSON.stringify(loaded)); } catch {}
           if (loaded.advisorMessages?.length) {
             setAdvisorMessages(loaded.advisorMessages);
           }
@@ -355,6 +356,7 @@ function App() {
   };
 
   const handleDiscussStrategy = async (strategyContext: string): Promise<void> => {
+    advisorInitRef.current = true; // prevent race with handleAdvisorTabOpened
     setRefreshingAnalysis(true);
     const newConvId = crypto.randomUUID();
     try {
