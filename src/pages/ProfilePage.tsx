@@ -515,7 +515,7 @@ export default function ProfilePage({
           {/* Mobile-only: inline actions right of title */}
           <div className="flex items-center gap-3 sm:hidden">
             {activeTab === "profile" && profileId && (
-              <button onClick={() => setShowSavePopover((v) => !v)} className="text-xs text-white/30 hover:text-white/50">Save</button>
+              <button onClick={() => setShowSavePopover((v) => !v)} className="text-xs text-white/30 hover:text-white/50">{identifierSaved ? "Saved!" : "Save"}</button>
             )}
             {activeTab === "profile" && (
               <button onClick={() => setShowResume(true)} className="text-xs text-white/30 hover:text-white/50">Resume</button>
@@ -632,7 +632,7 @@ export default function ProfilePage({
             onClick={() => dismissWelcome("strategy")}
             className="shrink-0 text-sm font-medium text-white/80 transition-colors hover:text-white"
           >
-            Get AO review →
+            Get admissions review →
           </button>
         </div>
       )}

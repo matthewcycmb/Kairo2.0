@@ -64,6 +64,22 @@ function getVerdictStyle(verdict: string): { label: string; color: string; bg: s
   return { label: "Borderline", color: "text-amber-400", bg: "bg-amber-500/[0.08]", border: "border-amber-500/20" };
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+  return (
+    <button onClick={handleCopy} className="text-xs text-white/25 transition-colors hover:text-white/50">
+      {copied ? "Copied" : "Copy"}
+    </button>
+  );
+}
+
 export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: StrategyProps) {
   const [targetProgram, setTargetProgram] = useState(
     profile.goals?.targetUniversities || ""
@@ -145,68 +161,76 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Input card */}
-      <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] px-5 py-4 sm:px-6 sm:py-5">
-        <input
-          type="text"
-          value={targetProgram}
-          onChange={(e) => setTargetProgram(e.target.value)}
-          placeholder="Target program — e.g. Waterloo CS"
-          disabled={phase !== "input"}
-          className="w-full bg-transparent text-[15px] text-white placeholder:text-white/30 focus:outline-none disabled:opacity-60 sm:text-base"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && phase === "input") {
-              e.preventDefault();
-              handleAnalyze();
-            }
-          }}
-        />
-
-        {phase === "input" && (
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm text-white/40">
-              {targetProgram.trim().length > 0 && targetProgram.trim().length < 3
-                ? `${3 - targetProgram.trim().length} more characters needed`
-                : "\u00A0"}
-            </span>
+      {phase === "input" ? (
+        <div className="px-1">
+          <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] px-5 py-4 sm:px-6 sm:py-5">
+            <input
+              type="text"
+              value={targetProgram}
+              onChange={(e) => setTargetProgram(e.target.value)}
+              placeholder="Target program — e.g. Waterloo CS"
+              className="w-full bg-transparent text-[15px] text-white placeholder:text-white/25 focus:outline-none sm:text-base"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAnalyze();
+                }
+              }}
+            />
+          </div>
+          <div className="mt-3 flex justify-end">
             <button
               onClick={handleAnalyze}
               disabled={targetProgram.trim().length < 3}
-              className="rounded-xl border border-white/[0.15] bg-white/[0.15] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.22] disabled:cursor-not-allowed disabled:opacity-40"
+              className="text-sm font-medium text-white/60 transition-colors hover:text-white disabled:opacity-30"
             >
-              Analyze
+              Analyze →
             </button>
           </div>
-        )}
-        {phase !== "input" && (
-          <div className="mt-2 flex justify-end">
-            <button
-              onClick={handleReset}
-              className="text-sm text-white/40 transition-colors hover:text-white/60"
-            >
-              Try another program
-            </button>
-          </div>
-        )}
-      </div>
-
-      {error && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/20 p-3 text-sm text-red-300">
-          {error}
-          <button onClick={() => setError(null)} className="ml-2 font-medium underline">
-            Dismiss
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-3 px-1">
+          <span className="truncate text-sm text-white/50">{targetProgram}</span>
+          <button
+            onClick={handleReset}
+            className="shrink-0 text-xs text-white/30 transition-colors hover:text-white/50"
+          >
+            Change
           </button>
         </div>
       )}
 
-      {/* AO Review */}
-      {(phase === "loading" || phase === "results") && (
+      {error && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/20 p-3 text-sm text-red-300">
+          {error}
+          <div className="mt-2 flex gap-3">
+            <button onClick={handleAnalyze} className="font-medium underline">
+              Retry
+            </button>
+            <button onClick={() => setError(null)} className="text-red-300/60 underline">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Single loading state — before any results arrive */}
+      {phase === "loading" && !aoReady && !guideReady && (
+        loadingSpinner(`Analyzing for ${targetProgram}...`)
+      )}
+
+      {/* AO Review — show once ready */}
+      {(aoReady || (phase === "results" && aoData)) && (
         <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8">
           <h3 className="text-xs font-medium tracking-widest text-white/25 uppercase">Admissions Officer Review</h3>
-          {!aoReady ? loadingSpinner("Reading your application...") : aoData && verdictStyle && (
+          {aoData && verdictStyle && (
             <div>
               {/* Verdict hero */}
               <div className={`mt-6 rounded-2xl border ${verdictStyle.border} ${verdictStyle.bg} p-6 sm:p-8`}>
-                <span className={`text-2xl font-bold ${verdictStyle.color} sm:text-3xl`}>{verdictStyle.label}</span>
+                <div className="flex items-start justify-between">
+                  <span className={`text-2xl font-bold ${verdictStyle.color} sm:text-3xl`}>{verdictStyle.label}</span>
+                  <CopyButton text={`${verdictStyle.label} for ${targetProgram}\n\n${aoData.verdict}${aoData.nextSteps ? `\n\nNext Steps:\n${aoData.nextSteps}` : ""}`} />
+                </div>
                 <div className="mt-4 text-[15px] leading-[1.75] text-white/70 sm:text-base sm:leading-[1.8]">
                   <RichText text={aoData.verdict} />
                 </div>
@@ -239,27 +263,28 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
               </div>
 
               {onDiscussWithAdvisor && (
-                <button
-                  onClick={() => {
-                    const summary = `AO Review for "${targetProgram}":\n\nFirst Impression: ${aoData.firstImpression}\n\nStrengths: ${aoData.strengths}\n\nConcerns: ${aoData.concerns}\n\nComparison: ${aoData.comparison}\n\nVerdict: ${aoData.verdict}\n\nNext Steps: ${aoData.nextSteps || "N/A"}`;
-                    onDiscussWithAdvisor(summary);
-                  }}
-                  className="mt-4 w-full rounded-xl border border-white/[0.15] bg-white/[0.10] py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.18] hover:text-white"
-                >
-                  Discuss with Advisor
-                </button>
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => {
+                      const summary = `AO Review for "${targetProgram}":\n\nFirst Impression: ${aoData.firstImpression}\n\nStrengths: ${aoData.strengths}\n\nConcerns: ${aoData.concerns}\n\nComparison: ${aoData.comparison}\n\nVerdict: ${aoData.verdict}\n\nNext Steps: ${aoData.nextSteps || "N/A"}`;
+                      onDiscussWithAdvisor(summary);
+                    }}
+                    className="text-sm text-white/40 transition-colors hover:text-white/60"
+                  >
+                    Discuss with Advisor →
+                  </button>
+                </div>
               )}
             </div>
           )}
         </div>
       )}
 
-      {/* Strategy Guide */}
-      {(phase === "loading" || phase === "results") && (
+      {/* Strategy Guide — show once ready */}
+      {(guideReady || (phase === "results" && guideData)) && guideData && (
         <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] p-5 sm:p-8">
           <h3 className="text-xs font-medium tracking-widest text-white/25 uppercase">Program Strategy Guide</h3>
-          {!guideReady ? loadingSpinner("Building your strategy...") : guideData && (
-            <div className="mt-2">
+          <div className="mt-2">
               <Accordion title="What They Look For" defaultOpen>
                 <RichText text={guideData.whatTheyLookFor} />
               </Accordion>
@@ -276,7 +301,6 @@ export default function Strategy({ profile, onDiscussWithAdvisor, autoSubmit }: 
                 <RichText text={guideData.essayApproach} />
               </Accordion>
             </div>
-          )}
         </div>
       )}
 

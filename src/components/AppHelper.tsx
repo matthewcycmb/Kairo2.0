@@ -185,34 +185,36 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Intro header */}
-      <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] px-5 py-4 sm:px-6 sm:py-5">
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Paste your application question here..."
-          rows={3}
-          disabled={step !== "question"}
-          className="w-full resize-none bg-transparent text-[15px] text-white placeholder:text-white/30 focus:outline-none disabled:opacity-60 sm:text-base"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && step === "question") {
-              e.preventDefault();
-              handleGetQuestions();
-            }
-          }}
-        />
+      <div className="px-1">
         {step === "question" && (
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm text-white/40">
-              {question.trim().length > 0 && question.trim().length < 5
-                ? `${5 - question.trim().length} more characters needed`
-                : "\u00A0"}
-            </span>
+          <p className="mb-4 text-sm text-white/30">
+            Paste a question from any application — Kairo will write a personalized answer using your profile.
+          </p>
+        )}
+        <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] px-5 py-4 sm:px-6 sm:py-5">
+          <textarea
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder={step === "question" ? "e.g. Describe your most meaningful extracurricular activity" : question}
+            rows={2}
+            disabled={step !== "question"}
+            className="w-full resize-none bg-transparent text-[15px] text-white placeholder:text-white/25 focus:outline-none disabled:opacity-60 sm:text-base"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && step === "question") {
+                e.preventDefault();
+                handleGetQuestions();
+              }
+            }}
+          />
+        </div>
+        {step === "question" && (
+          <div className="mt-3 flex justify-end">
             <button
               onClick={handleGetQuestions}
               disabled={question.trim().length < 5 || isLoading}
-              className="rounded-xl border border-white/[0.15] bg-white/[0.15] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.22] disabled:cursor-not-allowed disabled:opacity-40"
+              className="text-sm font-medium text-white/60 transition-colors hover:text-white disabled:opacity-30"
             >
-              Next
+              Next →
             </button>
           </div>
         )}
@@ -220,7 +222,7 @@ export default function AppHelper({ profile, profileId, loadedSession, onSession
           <div className="mt-2 flex justify-end">
             <button
               onClick={handleStartOver}
-              className="text-sm text-white/40 transition-colors hover:text-white/60"
+              className="text-xs text-white/30 transition-colors hover:text-white/50"
             >
               Start over
             </button>

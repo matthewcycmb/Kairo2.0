@@ -76,6 +76,11 @@ body::before {
   margin-bottom: 0;
 }
 
+/* Tactile press feedback on mobile */
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 /* Fade-in animation for suggestion chips */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }

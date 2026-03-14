@@ -154,11 +154,14 @@ export default function AdvisorChat({
   isRefreshing,
 }: AdvisorChatProps) {
   const [input, setInput] = useState("");
+  const [chipsSent, setChipsSent] = useState(false);
   const [copiedBlock, setCopiedBlock] = useState<string | null>(null);
   const [typingId, setTypingId] = useState<string | null>(null);
   const [typingDone, setTypingDone] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [showScrollDown, setShowScrollDown] = useState(false);
   // Track IDs we've already seen so we can detect truly new messages
   const seenIdsRef = useRef<Set<string>>(new Set(advisorMessages.map((m) => m.id)));
 
@@ -168,6 +171,7 @@ export default function AdvisorChat({
     if (lastMsg?.role === "assistant" && !seenIdsRef.current.has(lastMsg.id)) {
       setTypingId(lastMsg.id);
       setTypingDone(false);
+      setChipsSent(false);
     }
     // Update seen IDs
     seenIdsRef.current = new Set(advisorMessages.map((m) => m.id));
@@ -187,6 +191,18 @@ export default function AdvisorChat({
     return () => clearInterval(interval);
   }, [typingId, typingDone]);
 
+  // Detect if user has scrolled up
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setShowScrollDown(distFromBottom > 150);
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const handleTypingDone = useCallback(() => {
     setTypingDone(true);
   }, []);
@@ -201,6 +217,7 @@ export default function AdvisorChat({
 
   const handleSuggestionClick = (suggestion: string) => {
     if (isLoading) return;
+    setChipsSent(true);
     onNewMessage(suggestion);
   };
 
@@ -262,7 +279,7 @@ export default function AdvisorChat({
     <div className="flex h-full flex-col">
       <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/[0.08] bg-white/[0.03]">
         {/* Messages area — independently scrollable */}
-        <div className="flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
+        <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
           {isRefreshing && (
             <div className="flex h-full flex-col items-center justify-center py-16">
               <p className="text-center text-lg font-medium text-white/50">
@@ -276,13 +293,15 @@ export default function AdvisorChat({
             if (ao) {
               const v = getVerdictLabel(ao.verdict);
               return (
-                <div className="py-8">
-                  <p className="text-xs text-white/25">{ao.targetProgram}</p>
-                  <p className={`mt-1 text-xl font-bold ${v.color}`}>{v.label}</p>
-                  <p className="mt-3 text-[15px] leading-[1.65] text-white/50">
-                    {ao.verdict.length > 150 ? ao.verdict.slice(0, 150).trimEnd() + "..." : ao.verdict}
-                  </p>
-                  <p className="mt-6 text-center text-sm text-white/25">
+                <div className="py-6">
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-5">
+                    <p className="text-xs text-white/25">{ao.targetProgram}</p>
+                    <p className={`mt-1 text-xl font-bold ${v.color}`}>{v.label}</p>
+                    <p className="mt-3 text-[15px] leading-[1.65] text-white/50">
+                      {ao.verdict.length > 150 ? ao.verdict.slice(0, 150).trimEnd() + "..." : ao.verdict}
+                    </p>
+                  </div>
+                  <p className="mt-5 text-center text-sm text-white/25">
                     Ask anything about your review
                   </p>
                 </div>
@@ -312,8 +331,8 @@ export default function AdvisorChat({
             </ChatBubble>
           ))}
 
-          {/* Suggestion chips — fade in after typing completes */}
-          {!isRefreshing && suggestions.length > 0 && (
+          {/* Suggestion chips — fade in after typing completes, hide after tap */}
+          {!isRefreshing && !chipsSent && suggestions.length > 0 && (
             <div className="flex flex-col items-start gap-2.5 pb-4 pt-1 animate-[fadeIn_0.4s_ease-out]">
               {suggestions.map((s, i) => (
                 <button
@@ -330,6 +349,17 @@ export default function AdvisorChat({
           {isLoading && <TypingIndicator />}
 
           <div ref={bottomRef} />
+
+          {/* Scroll to bottom indicator */}
+          {showScrollDown && (
+            <button
+              onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+              className="sticky bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-white/[0.10] px-3 py-1.5 text-xs text-white/50 backdrop-blur-sm transition-colors hover:bg-white/[0.18]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="inline h-3 w-3 mr-1"><path fillRule="evenodd" d="M8 2a.75.75 0 0 1 .75.75v8.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.22 3.22V2.75A.75.75 0 0 1 8 2Z" clipRule="evenodd" /></svg>
+              New message
+            </button>
+          )}
         </div>
 
         {/* Input area — pinned to bottom */}
@@ -342,6 +372,10 @@ export default function AdvisorChat({
                 setInput(e.target.value);
                 e.target.style.height = "auto";
                 e.target.style.height = e.target.scrollHeight + "px";
+              }}
+              onFocus={() => {
+                // iOS: scroll input into view after keyboard opens
+                setTimeout(() => inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
               }}
               onKeyDown={handleKeyDown}
               placeholder="Ask your advisor anything..."

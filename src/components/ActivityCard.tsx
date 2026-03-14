@@ -146,7 +146,7 @@ export default function ActivityCard({ activity, onEdit }: ActivityCardProps) {
           className="w-full resize-none border-b-2 border-blue-400 bg-transparent text-sm leading-relaxed text-white/70 outline-none sm:text-base"
         />
       ) : (
-        <p className={`text-sm leading-relaxed text-white/70 sm:text-base ${collapsed ? "line-clamp-3" : ""}`}>{activity.description}</p>
+        <p className={`text-sm leading-relaxed text-white/70 sm:text-base ${collapsed ? "line-clamp-2" : ""}`}>{activity.description}</p>
       )}
 
       {/* Collapsible content */}
